@@ -1,0 +1,18 @@
+capture:
+  interface: wlan1
+  enable_monitor: true
+  test_seconds: 3
+  management_only: true
+
+scanner:
+  ap_stale_seconds: 60
+  render_interval_seconds: 2
+
+deauth:
+  window_seconds: 10
+  threshold: 20
+  cooldown_seconds: 30
+
+logging:
+  level: INFO
+  rate_limit_seconds: 1
