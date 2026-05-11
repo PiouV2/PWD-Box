@@ -1,13 +1,22 @@
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 import sys
 from typing import Optional
 
-from .config import load_config
-from .health import format_results, run_health_check
-from .orchestration.session_manager import SessionManager
-from .utils.logging import setup_logging
+try:
+    from .config import load_config
+    from .health import format_results, run_health_check
+    from .orchestration.session_manager import SessionManager
+    from .utils.logging import setup_logging
+except ImportError:
+    root = Path(__file__).resolve().parents[2]
+    sys.path.insert(0, str(root / "src"))
+    from pwdbox.config import load_config
+    from pwdbox.health import format_results, run_health_check
+    from pwdbox.orchestration.session_manager import SessionManager
+    from pwdbox.utils.logging import setup_logging
 
 
 def _build_parser() -> argparse.ArgumentParser:
