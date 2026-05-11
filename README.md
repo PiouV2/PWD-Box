@@ -43,7 +43,7 @@ Config
   deauth thresholds, and AP stale timeout there. Keep thresholds conservative.
 
 Notes & limits
-- No UI (yet). This is CLI-only for Phase 1.
+- No UI (yet). This is CLI-only.
 - No database or PCAP evidence capture in this phase.
 - No Bluetooth, no packet injection, and no offensive features.
 - Keeps CPU/memory low-ish for use on a Raspberry Pi 3B+.
