@@ -20,7 +20,13 @@ def main() -> int:
     parser.add_argument("--interface", help="Interface to validate")
     args = parser.parse_args()
 
-    config = load_config(args.config)
+    try:
+        config = load_config(args.config)
+    except RuntimeError as exc:
+        if "PyYAML" in str(exc):
+            config = None
+        else:
+            raise
     results = run_health_check(config, interface=args.interface)
     print(format_results(results))
     return 0 if all(result.ok for result in results) else 1

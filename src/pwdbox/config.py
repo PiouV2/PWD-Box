@@ -4,8 +4,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-import yaml
-
 
 @dataclass
 class CaptureConfig:
@@ -85,6 +83,12 @@ def load_config(path: Optional[str] = None) -> Config:
     config_path = Path(path) if path else _default_config_path()
     data: Dict[str, Any] = {}
     if config_path.exists():
+        try:
+            import yaml
+        except ModuleNotFoundError as exc:
+            raise RuntimeError(
+                "PyYAML is required to load the config. Install with: pip install pyyaml"
+            ) from exc
         raw_text = config_path.read_text()
         data = yaml.safe_load(raw_text) or {}
     return Config.from_dict(data)
