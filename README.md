@@ -15,6 +15,8 @@ What it does :
 - Passively scans for nearby APs and keeps an in-memory list
 - Parses 802.11 management frames and recognizes deauth frames
 - Alerts when deauth frames exceed configured thresholds (sliding window)
+- Stores sessions/alerts/network snapshots in SQLite
+- Captures short PCAP evidence windows on alerts
 
 Quick setup (Raspberry Pi OS-ish)
 ```bash
@@ -33,6 +35,11 @@ Start passive monitoring:
 sudo .venv/bin/python -m pwdbox.main monitor --interface wlan1
 ```
 
+Start the touchscreen UI:
+```bash
+sudo .venv/bin/python -m pwdbox.main ui
+```
+
 Run the (safe) tests:
 ```bash
 pytest -q
@@ -43,10 +50,24 @@ Config
   deauth thresholds, and AP stale timeout there. Keep thresholds conservative.
 
 Notes & limits
-- No UI (yet). This is CLI-only.
-- No database or PCAP evidence capture in this phase.
+- Touchscreen UI is provided via Kivy (see troubleshooting below).
 - No Bluetooth, no packet injection, and no offensive features.
 - Keeps CPU/memory low-ish for use on a Raspberry Pi 3B+.
+
+Data storage
+- SQLite DB: data/db/pwd_box.sqlite (auto-created)
+- PCAP evidence: data/pcaps/ (auto-created)
+
+Retention defaults
+- DB: all sessions/alerts are kept by default (no automatic purge).
+- PCAP: defaults to max 200 files or 100 MB total, deleting oldest first.
+- Tune storage and evidence settings in config/default.yaml.
+
+Troubleshooting
+- Permissions: run with sudo or grant CAP_NET_ADMIN and CAP_NET_RAW.
+- Interface: confirm the adapter name with `iw dev` and update config/default.yaml.
+- Kivy install: on Raspberry Pi OS, install build deps if pip fails
+    (e.g., `sudo apt install libgl1-mesa-dev libgles2-mesa-dev`).
 
 If you break anything, blame the cat. If the cat is innocent, ping me.
 

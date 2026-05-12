@@ -33,6 +33,8 @@ def _build_parser() -> argparse.ArgumentParser:
     monitor_parser = subparsers.add_parser("monitor", help="Start passive monitoring")
     monitor_parser.add_argument("--interface", help="Interface to capture from")
 
+    subparsers.add_parser("ui", help="Start touchscreen UI")
+
     return parser
 
 
@@ -51,6 +53,14 @@ def main(argv: Optional[list[str]] = None) -> int:
         setup_logging(config.logging.level)
         session = SessionManager(config)
         return session.run(interface=args.interface)
+
+    if args.command == "ui":
+        try:
+            from .ui.app import run_ui
+        except Exception as exc:
+            print(f"UI startup failed: {exc}")
+            return 1
+        return run_ui(args.config)
 
     return 2
 

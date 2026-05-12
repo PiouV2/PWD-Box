@@ -16,3 +16,15 @@ deauth:
 logging:
   level: INFO
   rate_limit_seconds: 1
+
+storage:
+  db_path: data/db/pwd_box.sqlite
+  snapshot_interval_seconds: 10
+
+evidence:
+  pcap_enabled: true
+  pcap_dir: data/pcaps
+  pcap_buffer_seconds: 15
+  pcap_max_packets: 2000
+  pcap_max_files: 200
+  pcap_max_total_mb: 100

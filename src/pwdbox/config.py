@@ -33,11 +33,29 @@ class LoggingConfig:
 
 
 @dataclass
+class StorageConfig:
+    db_path: Optional[str] = None
+    snapshot_interval_seconds: float = 10.0
+
+
+@dataclass
+class EvidenceConfig:
+    pcap_enabled: bool = True
+    pcap_dir: Optional[str] = None
+    pcap_buffer_seconds: float = 15.0
+    pcap_max_packets: int = 2000
+    pcap_max_files: int = 200
+    pcap_max_total_mb: int = 100
+
+
+@dataclass
 class Config:
     capture: CaptureConfig
     scanner: ScannerConfig
     deauth: DeauthConfig
     logging: LoggingConfig
+    storage: StorageConfig
+    evidence: EvidenceConfig
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "Config":
@@ -45,6 +63,8 @@ class Config:
         scanner_data = _get_section(data, "scanner")
         deauth_data = _get_section(data, "deauth")
         logging_data = _get_section(data, "logging")
+        storage_data = _get_section(data, "storage")
+        evidence_data = _get_section(data, "evidence")
         return Config(
             capture=CaptureConfig(
                 interface=capture_data.get("interface"),
@@ -66,6 +86,22 @@ class Config:
             logging=LoggingConfig(
                 level=str(logging_data.get("level", "INFO")),
                 rate_limit_seconds=float(logging_data.get("rate_limit_seconds", 1.0)),
+            ),
+            storage=StorageConfig(
+                db_path=storage_data.get("db_path"),
+                snapshot_interval_seconds=float(
+                    storage_data.get("snapshot_interval_seconds", 10.0)
+                ),
+            ),
+            evidence=EvidenceConfig(
+                pcap_enabled=bool(evidence_data.get("pcap_enabled", True)),
+                pcap_dir=evidence_data.get("pcap_dir"),
+                pcap_buffer_seconds=float(
+                    evidence_data.get("pcap_buffer_seconds", 15.0)
+                ),
+                pcap_max_packets=int(evidence_data.get("pcap_max_packets", 2000)),
+                pcap_max_files=int(evidence_data.get("pcap_max_files", 200)),
+                pcap_max_total_mb=int(evidence_data.get("pcap_max_total_mb", 100)),
             ),
         )
 
