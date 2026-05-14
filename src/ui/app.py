@@ -9,6 +9,7 @@ from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
 from kivy.metrics import dp, sp
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
@@ -16,6 +17,7 @@ from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen, ScreenManager
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
+from kivy.uix.togglebutton import ToggleButton
 
 from ..config import Config, load_config
 from ..orchestration.session_manager import SessionManager
@@ -102,8 +104,11 @@ class HomeScreen(Screen):
     def __init__(self, app: "PWDBoxApp", **kwargs) -> None:
         super().__init__(name="home", **kwargs)
         self.app = app
+        self.selected_interface: Optional[str] = None
 
-        root = BoxLayout(orientation="horizontal", padding=dp(10), spacing=dp(8))
+        root = BoxLayout(orientation="horizontal", padding=dp(8), spacing=dp(6))
+        root.size_hint_y = None
+        root.bind(minimum_height=root.setter("height"))
 
         left = BoxLayout(orientation="vertical", spacing=dp(8), size_hint_x=0.48)
         right = BoxLayout(orientation="vertical", spacing=dp(8), size_hint_x=0.52)
@@ -118,12 +123,25 @@ class HomeScreen(Screen):
 
         interface_row = BoxLayout(size_hint_y=None, height=dp(36), spacing=dp(6))
         interface_row.add_widget(Label(text="Interface", size_hint_x=0.35, font_size=sp(16)))
-        self.interface_input = TextInput(
-            text=app.default_interface,
-            multiline=False,
-            font_size=sp(16),
+
+        choices = ["wlan0", "wlan1"]
+        default_iface = (
+            app.default_interface
+            if app.default_interface in choices
+            else choices[0]
         )
-        interface_row.add_widget(self.interface_input)
+        self.selected_interface = default_iface
+        for iface in choices:
+            button = ToggleButton(
+                text=iface,
+                group="iface",
+                size_hint_x=0.3,
+                font_size=sp(14),
+            )
+            if iface == default_iface:
+                button.state = "down"
+            button.bind(on_press=self._select_interface)
+            interface_row.add_widget(button)
         left.add_widget(interface_row)
 
         controls = BoxLayout(size_hint_y=None, height=dp(44), spacing=dp(8))
@@ -175,16 +193,22 @@ class HomeScreen(Screen):
         root.add_widget(left)
         root.add_widget(right)
 
-        self.add_widget(root)
+        container = AnchorLayout(anchor_x="center", anchor_y="top")
+        container.add_widget(root)
+        self.add_widget(container)
 
     def _start(self, _instance) -> None:
-        iface = self.interface_input.text.strip()
+        iface = self.selected_interface
         if iface:
             set_setting("last_interface", iface, self.app.db_path)
-        self.app.controller.start(interface=iface or None)
+        self.app.controller.start(interface=iface)
 
     def _stop(self, _instance) -> None:
         self.app.controller.stop()
+
+    def _select_interface(self, button: ToggleButton) -> None:
+        if button.state == "down":
+            self.selected_interface = button.text.strip()
 
     def update_status(self, status: Dict[str, Any], running: bool) -> None:
         self.status_label.text = "Status: running" if running else "Status: idle"
@@ -222,7 +246,9 @@ class NetworksScreen(Screen):
         super().__init__(name="networks", **kwargs)
         self.app = app
 
-        root = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(8))
+        root = BoxLayout(orientation="vertical", padding=dp(8), spacing=dp(6))
+        root.size_hint_y = None
+        root.bind(minimum_height=root.setter("height"))
         root.add_widget(
             Label(
                 text="Observed Networks",
@@ -237,7 +263,9 @@ class NetworksScreen(Screen):
         scroll = ScrollView()
         scroll.add_widget(self.grid)
         root.add_widget(scroll)
-        self.add_widget(root)
+        container = AnchorLayout(anchor_x="center", anchor_y="top")
+        container.add_widget(root)
+        self.add_widget(container)
 
     def update_networks(self, networks: List[Dict[str, Any]]) -> None:
         self.grid.clear_widgets()
@@ -260,7 +288,9 @@ class AlertsScreen(Screen):
         super().__init__(name="alerts", **kwargs)
         self.app = app
 
-        root = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(8))
+        root = BoxLayout(orientation="vertical", padding=dp(8), spacing=dp(6))
+        root.size_hint_y = None
+        root.bind(minimum_height=root.setter("height"))
         root.add_widget(
             Label(
                 text="Recent Alerts",
@@ -275,7 +305,9 @@ class AlertsScreen(Screen):
         scroll = ScrollView()
         scroll.add_widget(self.grid)
         root.add_widget(scroll)
-        self.add_widget(root)
+        container = AnchorLayout(anchor_x="center", anchor_y="top")
+        container.add_widget(root)
+        self.add_widget(container)
 
     def update_alerts(self, alerts: List[Dict[str, Any]]) -> None:
         self.grid.clear_widgets()
@@ -297,7 +329,9 @@ class HistoryScreen(Screen):
         super().__init__(name="history", **kwargs)
         self.app = app
 
-        root = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(8))
+        root = BoxLayout(orientation="vertical", padding=dp(8), spacing=dp(6))
+        root.size_hint_y = None
+        root.bind(minimum_height=root.setter("height"))
         root.add_widget(
             Label(text="History", size_hint_y=None, height=dp(30), font_size=sp(20))
         )
@@ -330,7 +364,9 @@ class HistoryScreen(Screen):
         alerts_scroll.add_widget(self.alerts_grid)
         root.add_widget(alerts_scroll)
 
-        self.add_widget(root)
+        container = AnchorLayout(anchor_x="center", anchor_y="top")
+        container.add_widget(root)
+        self.add_widget(container)
 
     def refresh(self) -> None:
         sessions = list_sessions(limit=8, db_path=self.app.db_path)
