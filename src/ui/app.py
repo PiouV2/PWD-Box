@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.window import Window
-from kivy.metrics import dp
+from kivy.metrics import dp, sp
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.gridlayout import GridLayout
@@ -79,7 +79,7 @@ class MonitorController:
 
 class NavBar(BoxLayout):
     def __init__(self, manager: ScreenManager, **kwargs) -> None:
-        super().__init__(orientation="horizontal", size_hint_y=None, height=dp(56), **kwargs)
+        super().__init__(orientation="horizontal", size_hint_y=None, height=dp(48), **kwargs)
         self.manager = manager
         for name, label in (
             ("home", "Home"),
@@ -87,7 +87,7 @@ class NavBar(BoxLayout):
             ("alerts", "Alerts"),
             ("history", "History"),
         ):
-            button = Button(text=label)
+            button = Button(text=label, font_size=sp(16))
             button.bind(on_press=self._navigate(name))
             self.add_widget(button)
 
@@ -103,54 +103,77 @@ class HomeScreen(Screen):
         super().__init__(name="home", **kwargs)
         self.app = app
 
-        root = BoxLayout(orientation="vertical", padding=dp(16), spacing=dp(12))
+        root = BoxLayout(orientation="horizontal", padding=dp(10), spacing=dp(8))
 
-        header = Label(text="PWD-Box Status", size_hint_y=None, height=dp(40))
-        root.add_widget(header)
+        left = BoxLayout(orientation="vertical", spacing=dp(8), size_hint_x=0.48)
+        right = BoxLayout(orientation="vertical", spacing=dp(8), size_hint_x=0.52)
 
-        interface_row = BoxLayout(size_hint_y=None, height=dp(40), spacing=dp(8))
-        interface_row.add_widget(Label(text="Interface", size_hint_x=0.3))
-        self.interface_input = TextInput(text=app.default_interface, multiline=False)
+        header = Label(
+            text="PWD-Box Status",
+            size_hint_y=None,
+            height=dp(30),
+            font_size=sp(20),
+        )
+        left.add_widget(header)
+
+        interface_row = BoxLayout(size_hint_y=None, height=dp(36), spacing=dp(6))
+        interface_row.add_widget(Label(text="Interface", size_hint_x=0.35, font_size=sp(16)))
+        self.interface_input = TextInput(
+            text=app.default_interface,
+            multiline=False,
+            font_size=sp(16),
+        )
         interface_row.add_widget(self.interface_input)
-        root.add_widget(interface_row)
+        left.add_widget(interface_row)
 
-        controls = BoxLayout(size_hint_y=None, height=dp(56), spacing=dp(12))
-        self.start_button = Button(text="Start Monitoring")
-        self.stop_button = Button(text="Stop Monitoring")
+        controls = BoxLayout(size_hint_y=None, height=dp(44), spacing=dp(8))
+        self.start_button = Button(text="Start", font_size=sp(16))
+        self.stop_button = Button(text="Stop", font_size=sp(16))
         self.start_button.bind(on_press=self._start)
         self.stop_button.bind(on_press=self._stop)
         controls.add_widget(self.start_button)
         controls.add_widget(self.stop_button)
-        root.add_widget(controls)
+        left.add_widget(controls)
 
-        status_row = BoxLayout(size_hint_y=None, height=dp(32))
-        self.status_label = Label(text="Status: idle")
+        status_row = BoxLayout(size_hint_y=None, height=dp(24))
+        self.status_label = Label(text="Status: idle", font_size=sp(16))
         status_row.add_widget(self.status_label)
-        root.add_widget(status_row)
+        left.add_widget(status_row)
 
-        indicators = GridLayout(cols=1, size_hint_y=None, height=dp(96))
-        self.adapter_label = Label(text="Adapter: unknown")
-        self.monitor_label = Label(text="Monitor mode: unknown")
-        self.logging_label = Label(text="DB logging: unknown")
+        indicators = GridLayout(cols=1, size_hint_y=None, height=dp(72))
+        self.adapter_label = Label(text="Adapter: unknown", font_size=sp(14))
+        self.monitor_label = Label(text="Monitor mode: unknown", font_size=sp(14))
+        self.logging_label = Label(text="DB logging: unknown", font_size=sp(14))
         indicators.add_widget(self.adapter_label)
         indicators.add_widget(self.monitor_label)
         indicators.add_widget(self.logging_label)
-        root.add_widget(indicators)
+        left.add_widget(indicators)
 
         self.alert_banner = Label(
             text="No active alerts",
             size_hint_y=None,
-            height=dp(40),
+            height=dp(32),
             color=(1, 1, 1, 1),
+            font_size=sp(16),
         )
-        root.add_widget(self.alert_banner)
+        right.add_widget(self.alert_banner)
 
-        root.add_widget(Label(text="Recent Alerts", size_hint_y=None, height=dp(28)))
+        right.add_widget(
+            Label(
+                text="Recent Alerts",
+                size_hint_y=None,
+                height=dp(24),
+                font_size=sp(16),
+            )
+        )
         self.alerts_grid = GridLayout(cols=1, size_hint_y=None, spacing=dp(4))
         self.alerts_grid.bind(minimum_height=self.alerts_grid.setter("height"))
         alerts_scroll = ScrollView()
         alerts_scroll.add_widget(self.alerts_grid)
-        root.add_widget(alerts_scroll)
+        right.add_widget(alerts_scroll)
+
+        root.add_widget(left)
+        root.add_widget(right)
 
         self.add_widget(root)
 
@@ -175,7 +198,7 @@ class HomeScreen(Screen):
     def update_alerts(self, alerts: List[Dict[str, Any]]) -> None:
         self.alerts_grid.clear_widgets()
         if not alerts:
-            self.alerts_grid.add_widget(Label(text="No alerts"))
+            self.alerts_grid.add_widget(Label(text="No alerts", font_size=sp(14)))
             self.alert_banner.text = "No active alerts"
             self.alert_banner.color = (1, 1, 1, 1)
             return
@@ -189,7 +212,9 @@ class HomeScreen(Screen):
             key = alert.get("key")
             count = alert.get("count")
             text = f"{timestamp} {alert.get('alert_type')} {key} count={count}"
-            self.alerts_grid.add_widget(Label(text=text, size_hint_y=None, height=dp(24)))
+            self.alerts_grid.add_widget(
+                Label(text=text, size_hint_y=None, height=dp(20), font_size=sp(14))
+            )
 
 
 class NetworksScreen(Screen):
@@ -197,8 +222,15 @@ class NetworksScreen(Screen):
         super().__init__(name="networks", **kwargs)
         self.app = app
 
-        root = BoxLayout(orientation="vertical", padding=dp(16), spacing=dp(12))
-        root.add_widget(Label(text="Observed Networks", size_hint_y=None, height=dp(40)))
+        root = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(8))
+        root.add_widget(
+            Label(
+                text="Observed Networks",
+                size_hint_y=None,
+                height=dp(30),
+                font_size=sp(20),
+            )
+        )
 
         self.grid = GridLayout(cols=1, size_hint_y=None, spacing=dp(4))
         self.grid.bind(minimum_height=self.grid.setter("height"))
@@ -210,7 +242,7 @@ class NetworksScreen(Screen):
     def update_networks(self, networks: List[Dict[str, Any]]) -> None:
         self.grid.clear_widgets()
         if not networks:
-            self.grid.add_widget(Label(text="No networks yet"))
+            self.grid.add_widget(Label(text="No networks yet", font_size=sp(14)))
             return
         for item in networks:
             ssid = item.get("ssid") or "<hidden>"
@@ -218,7 +250,9 @@ class NetworksScreen(Screen):
             rssi = item.get("rssi") if item.get("rssi") is not None else "-"
             age = item.get("age_seconds", 0)
             text = f"{ssid}  {bssid}  rssi={rssi}  age={age}s"
-            self.grid.add_widget(Label(text=text, size_hint_y=None, height=dp(24)))
+            self.grid.add_widget(
+                Label(text=text, size_hint_y=None, height=dp(20), font_size=sp(14))
+            )
 
 
 class AlertsScreen(Screen):
@@ -226,8 +260,15 @@ class AlertsScreen(Screen):
         super().__init__(name="alerts", **kwargs)
         self.app = app
 
-        root = BoxLayout(orientation="vertical", padding=dp(16), spacing=dp(12))
-        root.add_widget(Label(text="Recent Alerts", size_hint_y=None, height=dp(40)))
+        root = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(8))
+        root.add_widget(
+            Label(
+                text="Recent Alerts",
+                size_hint_y=None,
+                height=dp(30),
+                font_size=sp(20),
+            )
+        )
 
         self.grid = GridLayout(cols=1, size_hint_y=None, spacing=dp(4))
         self.grid.bind(minimum_height=self.grid.setter("height"))
@@ -239,14 +280,16 @@ class AlertsScreen(Screen):
     def update_alerts(self, alerts: List[Dict[str, Any]]) -> None:
         self.grid.clear_widgets()
         if not alerts:
-            self.grid.add_widget(Label(text="No alerts"))
+            self.grid.add_widget(Label(text="No alerts", font_size=sp(14)))
             return
         for alert in alerts:
             text = (
                 f"{alert.get('timestamp')} {alert.get('alert_type')} "
                 f"key={alert.get('key')} count={alert.get('count')}"
             )
-            self.grid.add_widget(Label(text=text, size_hint_y=None, height=dp(24)))
+            self.grid.add_widget(
+                Label(text=text, size_hint_y=None, height=dp(20), font_size=sp(14))
+            )
 
 
 class HistoryScreen(Screen):
@@ -254,17 +297,33 @@ class HistoryScreen(Screen):
         super().__init__(name="history", **kwargs)
         self.app = app
 
-        root = BoxLayout(orientation="vertical", padding=dp(16), spacing=dp(12))
-        root.add_widget(Label(text="History", size_hint_y=None, height=dp(40)))
+        root = BoxLayout(orientation="vertical", padding=dp(10), spacing=dp(8))
+        root.add_widget(
+            Label(text="History", size_hint_y=None, height=dp(30), font_size=sp(20))
+        )
 
-        root.add_widget(Label(text="Recent Sessions", size_hint_y=None, height=dp(28)))
+        root.add_widget(
+            Label(
+                text="Recent Sessions",
+                size_hint_y=None,
+                height=dp(22),
+                font_size=sp(16),
+            )
+        )
         self.sessions_grid = GridLayout(cols=1, size_hint_y=None, spacing=dp(4))
         self.sessions_grid.bind(minimum_height=self.sessions_grid.setter("height"))
-        sessions_scroll = ScrollView(size_hint_y=0.45)
+        sessions_scroll = ScrollView(size_hint_y=0.4)
         sessions_scroll.add_widget(self.sessions_grid)
         root.add_widget(sessions_scroll)
 
-        root.add_widget(Label(text="Recent Alerts", size_hint_y=None, height=dp(28)))
+        root.add_widget(
+            Label(
+                text="Recent Alerts",
+                size_hint_y=None,
+                height=dp(22),
+                font_size=sp(16),
+            )
+        )
         self.alerts_grid = GridLayout(cols=1, size_hint_y=None, spacing=dp(4))
         self.alerts_grid.bind(minimum_height=self.alerts_grid.setter("height"))
         alerts_scroll = ScrollView()
@@ -279,18 +338,20 @@ class HistoryScreen(Screen):
 
         self.sessions_grid.clear_widgets()
         if not sessions:
-            self.sessions_grid.add_widget(Label(text="No sessions"))
+            self.sessions_grid.add_widget(Label(text="No sessions", font_size=sp(14)))
         else:
             for session in sessions:
                 text = (
                     f"#{session.get('id')} {session.get('interface')} "
                     f"{session.get('start_time')} {session.get('status')}"
                 )
-                self.sessions_grid.add_widget(Label(text=text, size_hint_y=None, height=dp(24)))
+                self.sessions_grid.add_widget(
+                    Label(text=text, size_hint_y=None, height=dp(20), font_size=sp(14))
+                )
 
         self.alerts_grid.clear_widgets()
         if not alerts:
-            self.alerts_grid.add_widget(Label(text="No alerts"))
+            self.alerts_grid.add_widget(Label(text="No alerts", font_size=sp(14)))
         else:
             for alert in alerts:
                 details = alert.get("details")
@@ -299,7 +360,9 @@ class HistoryScreen(Screen):
                     f"{alert.get('timestamp')} {alert.get('alert_type')} "
                     f"key={key}"
                 )
-                self.alerts_grid.add_widget(Label(text=text, size_hint_y=None, height=dp(24)))
+                self.alerts_grid.add_widget(
+                    Label(text=text, size_hint_y=None, height=dp(20), font_size=sp(14))
+                )
 
 
 class PWDBoxApp(App):
