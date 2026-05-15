@@ -34,7 +34,7 @@ class SessionManager:
         self,
         config: Config,
         event_queue: Optional[queue.Queue] = None,
-        network_filter_mode: str = "weak",
+        network_filter_mode: str = "all",
     ) -> None:
         self.config = config
         self.event_queue = event_queue
@@ -143,19 +143,16 @@ class SessionManager:
         self.stop_event.set()
 
     def _normalize_filter_mode(self, mode: Optional[str]) -> str:
-        if mode in {"weak", "strong", "all"}:
-            return mode
-        return "weak"
+        return "all"
 
     def set_network_filter_mode(self, mode: str) -> None:
-        normalized = self._normalize_filter_mode(mode)
         with self._mode_lock:
-            if normalized == self._network_filter_mode:
+            if self._network_filter_mode == "all":
                 return
-            self._network_filter_mode = normalized
-            self.status["network_filter_mode"] = normalized
-        self._emit_status(network_filter_mode=normalized)
-        self._emit_event("network_filter", {"mode": normalized})
+            self._network_filter_mode = "all"
+            self.status["network_filter_mode"] = "all"
+        self._emit_status(network_filter_mode="all")
+        self._emit_event("network_filter", {"mode": "all"})
         self._emit_networks(time.time())
 
     def _current_network_filter_mode(self) -> str:
@@ -313,17 +310,12 @@ class SessionManager:
     def _emit_networks(self, now: float) -> None:
         if not self.event_queue:
             return
-        mode = self._current_network_filter_mode()
         items = []
         for info in sorted(
             self.ap_table.values(),
             key=lambda item: item.last_seen,
             reverse=True,
         ):
-            if mode == "weak" and info.rssi is not None and info.rssi >= -60:
-                continue
-            if mode == "strong" and info.rssi is not None and info.rssi < -60:
-                continue
             items.append(
                 {
                     "ssid": info.ssid,
@@ -333,7 +325,7 @@ class SessionManager:
                     "age_seconds": int(now - info.last_seen),
                 }
             )
-        self._emit_event("networks", {"items": items, "timestamp": now, "filter_mode": mode})
+        self._emit_event("networks", {"items": items, "timestamp": now, "filter_mode": "all"})
 
     def _log_network_snapshots(self, now: float) -> None:
         if self.session_id is None:

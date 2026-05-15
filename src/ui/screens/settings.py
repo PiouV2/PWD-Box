@@ -55,10 +55,11 @@ class SettingsScreen(Screen):
         interface_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
         interface_card.add_widget(Label(text="Interface", color=theme.palette.text, font_size=theme.h3, size_hint_y=None, height=theme.dp(22)))
         self.interface_spinner = Spinner(
-            text=self.app.interface_choice or "wlan0",
-            values=["wlan0", "wlan1"],
+            text="wlan1",
+            values=["wlan1"],
             size_hint_y=None,
             height=theme.button_height,
+            disabled=True,
         )
         interface_card.add_widget(self.interface_spinner)
         root.add_widget(interface_card)
@@ -152,12 +153,12 @@ class SettingsScreen(Screen):
         self.app.set_theme(mode)
 
     def _save(self) -> None:
-        self.app.interface_choice = self.interface_spinner.text
+        self.app.interface_choice = "wlan1"
         self.app.app_config.capture.interface = self.app.interface_choice
         self.app.persist_settings()
 
     def refresh(self) -> None:
-        self.interface_spinner.text = self.app.interface_choice or "wlan0"
+        self.interface_spinner.text = "wlan1"
         self.pcap_toggle.state = "down" if self.app.app_config.evidence.pcap_enabled else "normal"
         self.pcap_toggle.text = "PCAP capture: ON" if self.app.app_config.evidence.pcap_enabled else "PCAP capture: OFF"
         self.buffer_stepper.value = int(self.app.app_config.evidence.pcap_buffer_seconds)

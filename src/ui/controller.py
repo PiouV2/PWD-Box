@@ -9,20 +9,19 @@ from ..config import Config
 
 
 class MonitorController:
-    def __init__(self, config: Config, event_queue: queue.Queue, network_filter_mode: str = "weak") -> None:
+    def __init__(self, config: Config, event_queue: queue.Queue, network_filter_mode: str = "all") -> None:
         self.config = config
         self.event_queue = event_queue
         self.thread: Optional[threading.Thread] = None
         self.session: Optional[SessionManager] = None
-        self.network_filter_mode = network_filter_mode if network_filter_mode in {"weak", "strong", "all"} else "weak"
+        self.network_filter_mode = "all"
         self._lock = threading.Lock()
 
     def start(self, interface: Optional[str] = None, network_filter_mode: Optional[str] = None) -> None:
         with self._lock:
             if self.thread and self.thread.is_alive():
                 return
-            if network_filter_mode in {"weak", "strong", "all"}:
-                self.network_filter_mode = network_filter_mode
+            self.network_filter_mode = "all"
             self.session = SessionManager(
                 self.config,
                 event_queue=self.event_queue,
@@ -36,12 +35,10 @@ class MonitorController:
             self.thread.start()
 
     def set_network_filter_mode(self, mode: str) -> None:
-        if mode not in {"weak", "strong", "all"}:
-            mode = "weak"
         with self._lock:
-            self.network_filter_mode = mode
+            self.network_filter_mode = "all"
             if self.session:
-                self.session.set_network_filter_mode(mode)
+                self.session.set_network_filter_mode("all")
 
     def _run(self, interface: Optional[str]) -> None:
         if self.session is None:
