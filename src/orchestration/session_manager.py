@@ -9,7 +9,7 @@ import time
 from typing import Any, Deque, Dict, Optional
 
 from ..capture.packet_parser import parse_packet
-from ..capture.wifi_sniffer import capture_test, ensure_monitor_mode, set_channel, sniff_loop
+from ..capture.wifi_sniffer import capture_test, ensure_monitor_mode, sniff_loop
 from ..config import Config
 from ..detection.deauth_detector import DeauthDetector
 from ..evidence.pcap import (
@@ -44,8 +44,6 @@ class SessionManager:
         self.alerts: Deque[str] = deque(maxlen=5)
         self.deauth_seen = 0
         self.stop_event = threading.Event()
-        self._channel_hop_stop = threading.Event()
-        self._channel_hopper_thread: Optional[threading.Thread] = None
         self.session_id: Optional[int] = None
         self.db_path: Optional[str] = None
         self.status: Dict[str, Any] = {
@@ -80,7 +78,6 @@ class SessionManager:
         render_console: bool = True,
     ) -> int:
         self.stop_event.clear()
-        self._channel_hop_stop.clear()
         self.render_console = render_console
         iface = interface or self.config.capture.interface
         self._emit_status(interface=iface)
@@ -98,8 +95,6 @@ class SessionManager:
             return 2
         self._emit_status(monitor_mode=True)
 
-        self._start_channel_hopper(iface)
-
         if not capture_test(
             iface,
             self.config.capture.test_seconds,
@@ -111,7 +106,6 @@ class SessionManager:
             )
             self._emit_status(adapter_ok=False, message="Capture test failed")
             self._close_session("error")
-            self._stop_channel_hopper()
             return 3
 
         self._emit_status(adapter_ok=True, running=True)
@@ -133,7 +127,6 @@ class SessionManager:
             logging.exception("Capture error: %s", exc)
             self._emit_status(message=str(exc))
             exit_code = 4
-        self._stop_channel_hopper()
         logging.info("Capture stopped.")
         self._emit_status(running=False)
         self._close_session("stopped" if self.stop_event.is_set() else "ended")
@@ -148,39 +141,6 @@ class SessionManager:
 
     def stop(self) -> None:
         self.stop_event.set()
-        self._stop_channel_hopper()
-
-    def _start_channel_hopper(self, iface: str) -> None:
-        if not self.config.scanner.channel_hop_enabled:
-            return
-        channels = self.config.scanner.channels or [1, 6, 11]
-        channels = [channel for channel in channels if channel > 0]
-        if not channels:
-            return
-        if self._channel_hopper_thread and self._channel_hopper_thread.is_alive():
-            return
-        self._channel_hopper_thread = threading.Thread(
-            target=self._channel_hop_loop,
-            args=(iface, channels, self.config.scanner.channel_hop_interval_seconds),
-            daemon=True,
-        )
-        self._channel_hopper_thread.start()
-
-    def _stop_channel_hopper(self) -> None:
-        self._channel_hop_stop.set()
-        if self._channel_hopper_thread and self._channel_hopper_thread.is_alive():
-            self._channel_hopper_thread.join(timeout=1.0)
-
-    def _channel_hop_loop(self, iface: str, channels: list[int], interval: float) -> None:
-        if interval <= 0:
-            interval = 1.0
-        index = 0
-        while not self._channel_hop_stop.is_set():
-            channel = channels[index % len(channels)]
-            if not set_channel(iface, channel):
-                logging.debug("Failed to set channel %s on %s", channel, iface)
-            index += 1
-            self._channel_hop_stop.wait(interval)
 
     def _normalize_filter_mode(self, mode: Optional[str]) -> str:
         if mode in {"weak", "strong", "all"}:
