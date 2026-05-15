@@ -10,6 +10,7 @@ from kivy.uix.recycleboxlayout import RecycleBoxLayout
 from kivy.uix.recycleview import RecycleView
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
 from kivy.uix.screenmanager import Screen
+from kivy.factory import Factory
 
 from ..components import Card
 from ..theme import Theme
@@ -89,7 +90,8 @@ class NetworksScreen(Screen):
         list_card = Card(theme, orientation="vertical", padding=[theme.gap_s, theme.gap_s, theme.gap_s, theme.gap_s])
         self.recycler = RecycleView()
         NetworkRow.theme_ref = theme
-        self.recycler.viewclass = NetworkRow
+        Factory.register("NetworkRow", cls=NetworkRow)
+        self.recycler.viewclass = "NetworkRow"
         layout = RecycleBoxLayout(orientation="vertical", default_size=(None, theme.row_height))
         layout.default_size_hint = (1, None)
         layout.size_hint_y = None
