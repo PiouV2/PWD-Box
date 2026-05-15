@@ -67,8 +67,8 @@ class SettingsScreen(Screen):
         evidence_card.add_widget(Label(text="Evidence", color=theme.palette.text, font_size=theme.h3, size_hint_y=None, height=theme.dp(22)))
 
         self.pcap_toggle = ToggleButton(
-            text="PCAP capture: ON" if self.app.config.evidence.pcap_enabled else "PCAP capture: OFF",
-            state="down" if self.app.config.evidence.pcap_enabled else "normal",
+            text="PCAP capture: ON" if self.app.app_config.evidence.pcap_enabled else "PCAP capture: OFF",
+            state="down" if self.app.app_config.evidence.pcap_enabled else "normal",
             size_hint_y=None,
             height=theme.button_height,
             background_normal="",
@@ -81,7 +81,7 @@ class SettingsScreen(Screen):
         self.buffer_stepper = Stepper(
             theme,
             label="PCAP buffer (s)",
-            value=int(self.app.config.evidence.pcap_buffer_seconds),
+            value=int(self.app.app_config.evidence.pcap_buffer_seconds),
             step=5,
             on_change=self._update_buffer,
         )
@@ -90,7 +90,7 @@ class SettingsScreen(Screen):
         self.max_files_stepper = Stepper(
             theme,
             label="Max PCAP files",
-            value=int(self.app.config.evidence.pcap_max_files),
+            value=int(self.app.app_config.evidence.pcap_max_files),
             step=10,
             on_change=self._update_max_files,
         )
@@ -99,7 +99,7 @@ class SettingsScreen(Screen):
         self.max_mb_stepper = Stepper(
             theme,
             label="Max PCAP MB",
-            value=int(self.app.config.evidence.pcap_max_total_mb),
+            value=int(self.app.app_config.evidence.pcap_max_total_mb),
             step=25,
             on_change=self._update_max_mb,
         )
@@ -135,16 +135,16 @@ class SettingsScreen(Screen):
     def _toggle_pcap(self, _instance) -> None:
         enabled = self.pcap_toggle.state == "down"
         self.pcap_toggle.text = "PCAP capture: ON" if enabled else "PCAP capture: OFF"
-        self.app.config.evidence.pcap_enabled = enabled
+        self.app.app_config.evidence.pcap_enabled = enabled
 
     def _update_buffer(self, value: int) -> None:
-        self.app.config.evidence.pcap_buffer_seconds = float(value)
+        self.app.app_config.evidence.pcap_buffer_seconds = float(value)
 
     def _update_max_files(self, value: int) -> None:
-        self.app.config.evidence.pcap_max_files = int(value)
+        self.app.app_config.evidence.pcap_max_files = int(value)
 
     def _update_max_mb(self, value: int) -> None:
-        self.app.config.evidence.pcap_max_total_mb = int(value)
+        self.app.app_config.evidence.pcap_max_total_mb = int(value)
 
     def _toggle_theme(self, _instance) -> None:
         mode = "dark" if self.theme_toggle.state == "down" else "light"
@@ -153,18 +153,18 @@ class SettingsScreen(Screen):
 
     def _save(self) -> None:
         self.app.interface_choice = self.interface_spinner.text
-        self.app.config.capture.interface = self.app.interface_choice
+        self.app.app_config.capture.interface = self.app.interface_choice
         self.app.persist_settings()
 
     def refresh(self) -> None:
         self.interface_spinner.text = self.app.interface_choice or "wlan0"
-        self.pcap_toggle.state = "down" if self.app.config.evidence.pcap_enabled else "normal"
-        self.pcap_toggle.text = "PCAP capture: ON" if self.app.config.evidence.pcap_enabled else "PCAP capture: OFF"
-        self.buffer_stepper.value = int(self.app.config.evidence.pcap_buffer_seconds)
+        self.pcap_toggle.state = "down" if self.app.app_config.evidence.pcap_enabled else "normal"
+        self.pcap_toggle.text = "PCAP capture: ON" if self.app.app_config.evidence.pcap_enabled else "PCAP capture: OFF"
+        self.buffer_stepper.value = int(self.app.app_config.evidence.pcap_buffer_seconds)
         self.buffer_stepper.value_label.text = str(self.buffer_stepper.value)
-        self.max_files_stepper.value = int(self.app.config.evidence.pcap_max_files)
+        self.max_files_stepper.value = int(self.app.app_config.evidence.pcap_max_files)
         self.max_files_stepper.value_label.text = str(self.max_files_stepper.value)
-        self.max_mb_stepper.value = int(self.app.config.evidence.pcap_max_total_mb)
+        self.max_mb_stepper.value = int(self.app.app_config.evidence.pcap_max_total_mb)
         self.max_mb_stepper.value_label.text = str(self.max_mb_stepper.value)
         self.theme_toggle.state = "down" if self.app.theme_mode == "dark" else "normal"
         self.theme_toggle.text = "Theme: Dark" if self.app.theme_mode == "dark" else "Theme: Light"

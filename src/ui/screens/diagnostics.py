@@ -88,7 +88,7 @@ class DiagnosticsScreen(Screen):
         thread.start()
 
     def _run(self) -> None:
-        results = run_health_check(self.app.config, interface=self.app.interface_choice)
+        results = run_health_check(self.app.app_config, interface=self.app.interface_choice)
         lines = [f"[{ 'PASS' if r.ok else 'FAIL' }] {r.name}: {r.details}" for r in results]
         details = format_results(results)
         Clock.schedule_once(lambda *_: self._update(lines, details), 0)

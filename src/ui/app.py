@@ -28,11 +28,11 @@ from .theme import resolve_theme
 class PWDBoxApp(App):
     def __init__(self, config: Config, demo: bool = False, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.config = config
+        self.app_config = config
         self.demo = demo
         self.event_queue: queue.Queue = queue.Queue()
-        self.controller = MonitorController(config, self.event_queue)
-        self.db_path = str(init_db(config.storage.db_path))
+        self.controller = MonitorController(self.app_config, self.event_queue)
+        self.db_path = str(init_db(self.app_config.storage.db_path))
         self.state = AppState()
         self.theme_mode = "dark"
         self.theme = resolve_theme(self.theme_mode)
@@ -53,32 +53,32 @@ class PWDBoxApp(App):
     def load_settings(self) -> None:
         self.interface_choice = get_setting(
             "interface",
-            get_setting("last_interface", self.config.capture.interface or "wlan0", db_path=self.db_path),
+            get_setting("last_interface", self.app_config.capture.interface or "wlan0", db_path=self.db_path),
             db_path=self.db_path,
         )
-        self.config.capture.interface = self.interface_choice
+        self.app_config.capture.interface = self.interface_choice
         self.theme_mode = get_setting("theme_mode", "dark", db_path=self.db_path)
-        self.config.evidence.pcap_enabled = bool(
-            get_setting("pcap_enabled", self.config.evidence.pcap_enabled, db_path=self.db_path)
+        self.app_config.evidence.pcap_enabled = bool(
+            get_setting("pcap_enabled", self.app_config.evidence.pcap_enabled, db_path=self.db_path)
         )
-        self.config.evidence.pcap_buffer_seconds = float(
-            get_setting("pcap_buffer_seconds", self.config.evidence.pcap_buffer_seconds, db_path=self.db_path)
+        self.app_config.evidence.pcap_buffer_seconds = float(
+            get_setting("pcap_buffer_seconds", self.app_config.evidence.pcap_buffer_seconds, db_path=self.db_path)
         )
-        self.config.evidence.pcap_max_files = int(
-            get_setting("pcap_max_files", self.config.evidence.pcap_max_files, db_path=self.db_path)
+        self.app_config.evidence.pcap_max_files = int(
+            get_setting("pcap_max_files", self.app_config.evidence.pcap_max_files, db_path=self.db_path)
         )
-        self.config.evidence.pcap_max_total_mb = int(
-            get_setting("pcap_max_total_mb", self.config.evidence.pcap_max_total_mb, db_path=self.db_path)
+        self.app_config.evidence.pcap_max_total_mb = int(
+            get_setting("pcap_max_total_mb", self.app_config.evidence.pcap_max_total_mb, db_path=self.db_path)
         )
         self.theme = resolve_theme(self.theme_mode)
 
     def persist_settings(self) -> None:
         set_setting("interface", self.interface_choice, db_path=self.db_path)
         set_setting("last_interface", self.interface_choice, db_path=self.db_path)
-        set_setting("pcap_enabled", self.config.evidence.pcap_enabled, db_path=self.db_path)
-        set_setting("pcap_buffer_seconds", self.config.evidence.pcap_buffer_seconds, db_path=self.db_path)
-        set_setting("pcap_max_files", self.config.evidence.pcap_max_files, db_path=self.db_path)
-        set_setting("pcap_max_total_mb", self.config.evidence.pcap_max_total_mb, db_path=self.db_path)
+        set_setting("pcap_enabled", self.app_config.evidence.pcap_enabled, db_path=self.db_path)
+        set_setting("pcap_buffer_seconds", self.app_config.evidence.pcap_buffer_seconds, db_path=self.db_path)
+        set_setting("pcap_max_files", self.app_config.evidence.pcap_max_files, db_path=self.db_path)
+        set_setting("pcap_max_total_mb", self.app_config.evidence.pcap_max_total_mb, db_path=self.db_path)
         set_setting("theme_mode", self.theme_mode, db_path=self.db_path)
         if self.header_bar:
             self.header_bar.set_message("Settings saved")
@@ -137,7 +137,7 @@ class PWDBoxApp(App):
         self.state.session_alert_count = 0
         self.state.last_alert_time = None
         self.state.last_error = None
-        iface = self.interface_choice or self.config.capture.interface
+        iface = self.interface_choice or self.app_config.capture.interface
         self.controller.start(interface=iface)
 
     def stop_monitoring(self) -> None:
