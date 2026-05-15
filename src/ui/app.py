@@ -37,6 +37,7 @@ class PWDBoxApp(App):
         self.theme_mode = "dark"
         self.theme = resolve_theme(self.theme_mode)
         self.interface_choice = None
+        self.network_filter_mode = "weak"
 
         self.screen_manager: Optional[ScreenManager] = None
         self.header_bar: Optional[HeaderBar] = None
@@ -70,6 +71,10 @@ class PWDBoxApp(App):
         self.app_config.evidence.pcap_max_total_mb = int(
             get_setting("pcap_max_total_mb", self.app_config.evidence.pcap_max_total_mb, db_path=self.db_path)
         )
+        self.network_filter_mode = get_setting("network_filter_mode", "weak", db_path=self.db_path)
+        if self.network_filter_mode not in {"weak", "strong", "all"}:
+            self.network_filter_mode = "weak"
+        self.controller.set_network_filter_mode(self.network_filter_mode)
         self.theme = resolve_theme(self.theme_mode)
 
     def persist_settings(self) -> None:
@@ -79,6 +84,7 @@ class PWDBoxApp(App):
         set_setting("pcap_buffer_seconds", self.app_config.evidence.pcap_buffer_seconds, db_path=self.db_path)
         set_setting("pcap_max_files", self.app_config.evidence.pcap_max_files, db_path=self.db_path)
         set_setting("pcap_max_total_mb", self.app_config.evidence.pcap_max_total_mb, db_path=self.db_path)
+        set_setting("network_filter_mode", self.network_filter_mode, db_path=self.db_path)
         set_setting("theme_mode", self.theme_mode, db_path=self.db_path)
         if self.header_bar:
             self.header_bar.set_message("Settings saved")
@@ -138,7 +144,14 @@ class PWDBoxApp(App):
         self.state.last_alert_time = None
         self.state.last_error = None
         iface = self.interface_choice or self.app_config.capture.interface
-        self.controller.start(interface=iface)
+        self.controller.start(interface=iface, network_filter_mode=self.network_filter_mode)
+
+    def set_network_filter_mode(self, mode: str) -> None:
+        if mode not in {"weak", "strong", "all"}:
+            mode = "weak"
+        self.network_filter_mode = mode
+        set_setting("network_filter_mode", mode, db_path=self.db_path)
+        self.controller.set_network_filter_mode(mode)
 
     def stop_monitoring(self) -> None:
         self.controller.stop()

@@ -4,12 +4,12 @@ from typing import Dict, List, Optional
 
 from kivy.properties import StringProperty
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.recycleboxlayout import RecycleBoxLayout
 from kivy.uix.recycleview import RecycleView
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
 from kivy.uix.screenmanager import Screen
-from kivy.uix.togglebutton import ToggleButton
 
 from ..components import Card
 from ..theme import Theme
@@ -56,7 +56,7 @@ class NetworksScreen(Screen):
         self.app = app
         self.theme = theme
         self._networks: List[Dict[str, object]] = []
-        self._strong_only = False
+        self._filter_mode = self.app.network_filter_mode if self.app.network_filter_mode in {"weak", "strong", "all"} else "weak"
 
         root = BoxLayout(
             orientation="vertical",
@@ -67,16 +67,16 @@ class NetworksScreen(Screen):
         header = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.dp(28))
         header.add_widget(Label(text="Networks (Live)", color=theme.palette.text, font_size=theme.h2, size_hint_x=0.7))
 
-        self.toggle_strong = ToggleButton(
-            text="Strong only",
+        self.filter_button = Button(
+            text=self._filter_mode.capitalize(),
             size_hint_x=0.3,
             background_normal="",
             background_color=theme.palette.surface_alt,
             color=theme.palette.text,
             font_size=theme.body,
         )
-        self.toggle_strong.bind(on_press=self._toggle_filter)
-        header.add_widget(self.toggle_strong)
+        self.filter_button.bind(on_press=self._cycle_filter)
+        header.add_widget(self.filter_button)
         root.add_widget(header)
 
         table_header = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.row_height_compact)
@@ -101,22 +101,18 @@ class NetworksScreen(Screen):
 
         self.add_widget(root)
 
-    def _toggle_filter(self, _instance) -> None:
-        self._strong_only = self.toggle_strong.state == "down"
-        self._apply_networks()
+    def _cycle_filter(self, _instance) -> None:
+        if self._filter_mode == "weak":
+            self._filter_mode = "strong"
+        elif self._filter_mode == "strong":
+            self._filter_mode = "all"
+        else:
+            self._filter_mode = "weak"
+        self.filter_button.text = self._filter_mode.capitalize()
+        self.app.set_network_filter_mode(self._filter_mode)
 
     def update_networks(self, networks: List[Dict[str, object]]) -> None:
         self._networks = networks
-        self._apply_networks()
-
-    def _apply_networks(self) -> None:
-        networks = self._networks
-        if self._strong_only:
-            networks = [item for item in networks if item.get("rssi") is not None and item.get("rssi") >= -60]
-        networks = sorted(
-            networks,
-            key=lambda item: (item.get("rssi") is None, -(item.get("rssi") or -100), item.get("age_seconds", 0)),
-        )
         rows = []
         for item in networks:
             ssid = item.get("ssid") or "<hidden>"

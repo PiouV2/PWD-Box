@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
@@ -26,7 +27,8 @@ class DashboardScreen(Screen):
         self.alert_banner = AlertBanner(theme)
         root.add_widget(self.alert_banner)
 
-        body = BoxLayout(orientation="horizontal", spacing=theme.gap_m)
+        body = BoxLayout(orientation="horizontal", spacing=theme.gap_m, size_hint_y=None)
+        body.bind(minimum_height=body.setter("height"))
 
         self.status_card = Card(
             theme,
@@ -35,6 +37,8 @@ class DashboardScreen(Screen):
             spacing=theme.gap_xs,
         )
         self.status_card.size_hint_x = 0.52
+        self.status_card.size_hint_y = None
+        self.status_card.bind(minimum_height=self.status_card.setter("height"))
 
         title = Label(text="System Status", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24))
         self.status_card.add_widget(title)
@@ -63,6 +67,8 @@ class DashboardScreen(Screen):
 
         actions = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_m)
         actions.size_hint_x = 0.48
+        actions.size_hint_y = None
+        actions.bind(minimum_height=actions.setter("height"))
         actions_title = Label(text="Quick Actions", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24))
         actions.add_widget(actions_title)
 
@@ -93,7 +99,9 @@ class DashboardScreen(Screen):
         actions.add_widget(grid)
         body.add_widget(actions)
 
-        root.add_widget(body)
+        body_container = AnchorLayout(anchor_x="center", anchor_y="center")
+        body_container.add_widget(body)
+        root.add_widget(body_container)
         self.add_widget(root)
 
     def _row(
