@@ -2,52 +2,22 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
-from kivy.properties import StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
-from kivy.uix.recycleboxlayout import RecycleBoxLayout
-from kivy.uix.recycleview import RecycleView
-from kivy.uix.recycleview.views import RecycleDataViewBehavior
 from kivy.uix.screenmanager import Screen
-from kivy.factory import Factory
+from kivy.uix.scrollview import ScrollView
 
 from ..components import Card
 from ..theme import Theme
 
 
-class NetworkRow(RecycleDataViewBehavior, BoxLayout):
-    ssid = StringProperty("")
-    bssid = StringProperty("")
-    seen = StringProperty("-")
-    rssi = StringProperty("-")
-    theme_ref: Optional[Theme] = None
-
-    def __init__(self, **kwargs) -> None:
-        theme = self.__class__.theme_ref
-        if theme is None:
-            raise RuntimeError("Theme not set for NetworkRow")
-        super().__init__(orientation="horizontal", size_hint_y=None, height=theme.row_height, **kwargs)
-        self.theme = theme
-        self.spacing = theme.gap_s
-        self.label_ssid = Label(color=theme.palette.text, font_size=theme.body, size_hint_x=0.38)
-        self.label_bssid = Label(color=theme.palette.text_dim, font_size=theme.body, size_hint_x=0.34)
-        self.label_rssi = Label(color=theme.palette.text, font_size=theme.body, size_hint_x=0.14)
-        self.label_seen = Label(color=theme.palette.text_dim, font_size=theme.body, size_hint_x=0.14)
-        self.add_widget(self.label_ssid)
-        self.add_widget(self.label_bssid)
-        self.add_widget(self.label_rssi)
-        self.add_widget(self.label_seen)
-
-    def refresh_view_attrs(self, rv, index, data):
-        self.ssid = data.get("ssid", "")
-        self.bssid = data.get("bssid", "")
-        self.rssi = str(data.get("rssi", "-"))
-        self.seen = str(data.get("seen", "-"))
-        self.label_ssid.text = self.ssid
-        self.label_bssid.text = self.bssid
-        self.label_rssi.text = self.rssi
-        self.label_seen.text = self.seen
-        return super().refresh_view_attrs(rv, index, data)
+class NetworkRow(BoxLayout):
+    def __init__(self, theme: Theme, ssid: str, bssid: str, rssi: str, seen: str, **kwargs) -> None:
+        super().__init__(orientation="horizontal", size_hint_y=None, height=theme.row_height, spacing=theme.gap_s, **kwargs)
+        self.add_widget(Label(text=ssid, color=theme.palette.text, font_size=theme.body, size_hint_x=0.38))
+        self.add_widget(Label(text=bssid, color=theme.palette.text_dim, font_size=theme.body, size_hint_x=0.34))
+        self.add_widget(Label(text=rssi, color=theme.palette.text, font_size=theme.body, size_hint_x=0.14))
+        self.add_widget(Label(text=seen, color=theme.palette.text_dim, font_size=theme.body, size_hint_x=0.14))
 
 
 class NetworksScreen(Screen):
@@ -100,17 +70,11 @@ class NetworksScreen(Screen):
         root.add_widget(table_header)
 
         list_card = Card(theme, orientation="vertical", padding=[theme.gap_s, theme.gap_s, theme.gap_s, theme.gap_s])
-        self.recycler = RecycleView()
-        NetworkRow.theme_ref = theme
-        Factory.register("NetworkRow", cls=NetworkRow)
-        self.recycler.viewclass = "NetworkRow"
-        layout = RecycleBoxLayout(orientation="vertical", default_size=(None, theme.row_height))
-        layout.default_size_hint = (1, None)
-        layout.size_hint_y = None
-        layout.bind(minimum_height=layout.setter("height"))
-        self.recycler.add_widget(layout)
-        self.recycler.layout_manager = layout
-        list_card.add_widget(self.recycler)
+        self.rows_scroll = ScrollView(do_scroll_x=False)
+        self.rows_container = BoxLayout(orientation="vertical", size_hint_y=None, spacing=theme.gap_xs)
+        self.rows_container.bind(minimum_height=self.rows_container.setter("height"))
+        self.rows_scroll.add_widget(self.rows_container)
+        list_card.add_widget(self.rows_scroll)
         root.add_widget(list_card)
 
         self.add_widget(root)
@@ -118,22 +82,25 @@ class NetworksScreen(Screen):
 
     def update_networks(self, networks: List[Dict[str, object]]) -> None:
         self._networks = networks
-        rows = []
+        self.rows_container.clear_widgets()
         for item in networks:
             ssid = item.get("ssid") or "<hidden>"
             bssid = item.get("bssid") or "-"
             rssi = item.get("rssi")
             age = item.get("age_seconds")
-            rows.append(
-                {
-                    "ssid": ssid,
-                    "bssid": bssid,
-                    "rssi": str(rssi) if rssi is not None else "-",
-                    "seen": str(age) if age is not None else "0",
-                }
+            row = NetworkRow(
+                self.theme,
+                ssid=str(ssid),
+                bssid=str(bssid),
+                rssi=str(rssi) if rssi is not None else "-",
+                seen=str(age) if age is not None else "0",
             )
+            self.rows_container.add_widget(row)
         placeholder = "No APs yet"
-        self.recycler.data = rows or [{"ssid": placeholder, "bssid": "", "rssi": "", "seen": ""}]
+        if not networks:
+            self.rows_container.add_widget(
+                NetworkRow(self.theme, ssid=placeholder, bssid="", rssi="", seen="")
+            )
 
     def update_status(
         self,
