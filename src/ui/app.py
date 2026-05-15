@@ -182,6 +182,11 @@ class PWDBoxApp(App):
                 self.state.last_error = message if message else None
             elif event_type == "networks":
                 self.state.networks = data.get("items", [])
+                filter_mode = data.get("filter_mode")
+                if filter_mode in {"weak", "strong", "all"}:
+                    self.network_filter_mode = filter_mode
+                    if self.networks:
+                        self.networks.set_filter_mode(filter_mode)
                 updated_networks = True
             elif event_type == "alert":
                 self.state.alerts.insert(0, data)

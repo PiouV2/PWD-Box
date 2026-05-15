@@ -111,6 +111,12 @@ class NetworksScreen(Screen):
         self.filter_button.text = self._filter_mode.capitalize()
         self.app.set_network_filter_mode(self._filter_mode)
 
+    def set_filter_mode(self, mode: str) -> None:
+        if mode not in {"weak", "strong", "all"}:
+            return
+        self._filter_mode = mode
+        self.filter_button.text = self._filter_mode.capitalize()
+
     def update_networks(self, networks: List[Dict[str, object]]) -> None:
         self._networks = networks
         rows = []
@@ -128,4 +134,5 @@ class NetworksScreen(Screen):
                     "rssi": str(rssi) if rssi is not None else "-",
                 }
             )
-        self.recycler.data = rows or [{"ssid": "No networks", "bssid": "", "channel": "", "rssi": ""}]
+        placeholder = f"No networks ({self._filter_mode})"
+        self.recycler.data = rows or [{"ssid": placeholder, "bssid": "", "channel": "", "rssi": ""}]
