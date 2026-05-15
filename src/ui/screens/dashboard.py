@@ -28,7 +28,12 @@ class DashboardScreen(Screen):
 
         body = BoxLayout(orientation="horizontal", spacing=theme.gap_m)
 
-        self.status_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
+        self.status_card = Card(
+            theme,
+            orientation="vertical",
+            padding=[theme.gap_m, theme.gap_s, theme.gap_m, theme.gap_s],
+            spacing=theme.gap_xs,
+        )
         self.status_card.size_hint_x = 0.52
 
         title = Label(text="System Status", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24))
