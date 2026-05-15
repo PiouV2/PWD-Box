@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
-from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
 from kivy.uix.togglebutton import ToggleButton
 
@@ -27,8 +27,8 @@ class SettingsScreen(Screen):
         header = Label(text="Settings", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(28))
         root.add_widget(header)
 
-        scroll = ScrollView(do_scroll_x=False)
-        content = BoxLayout(orientation="vertical", spacing=theme.gap_m, size_hint_y=None)
+        body = AnchorLayout(anchor_x="center", anchor_y="center")
+        content = BoxLayout(orientation="vertical", spacing=theme.gap_m, size_hint=(1, None))
         content.bind(minimum_height=content.setter("height"))
 
         capture_card = self._section_card(
@@ -85,8 +85,8 @@ class SettingsScreen(Screen):
         tools_card.add_widget(nav_actions)
         content.add_widget(tools_card)
 
-        scroll.add_widget(content)
-        root.add_widget(scroll)
+        body.add_widget(content)
+        root.add_widget(body)
 
         actions = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.button_height, spacing=theme.gap_s)
         self.save_button = PrimaryButton(theme, text="Save")

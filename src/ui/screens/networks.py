@@ -37,9 +37,11 @@ class NetworksScreen(Screen):
         header.add_widget(Label(text="Networks (Live)", color=theme.palette.text, font_size=theme.h2, size_hint_x=0.7))
         root.add_widget(header)
 
-        self.status_card = Card(theme, orientation="vertical", padding=theme.gap_s, spacing=theme.gap_xs)
+        self.status_card = Card(theme, orientation="vertical", padding=theme.gap_s, spacing=theme.gap_xs, size_hint_y=None)
+        self.status_card.height = 0
+        self.status_card.opacity = 0
         self.status_label = Label(
-            text="Monitoring stopped",
+            text="",
             color=theme.palette.text,
             font_size=theme.body,
             size_hint_y=None,
@@ -49,7 +51,7 @@ class NetworksScreen(Screen):
         )
         self.status_label.bind(size=lambda *_: setattr(self.status_label, "text_size", self.status_label.size))
         self.detail_label = Label(
-            text="Start monitoring from the Dashboard to view nearby APs.",
+            text="",
             color=theme.palette.text_dim,
             font_size=theme.caption,
             size_hint_y=None,
@@ -109,19 +111,15 @@ class NetworksScreen(Screen):
         error: Optional[str],
     ) -> None:
         palette = self.theme.palette
-        interface = status.get("interface") or getattr(self.app, "interface_choice", None) or "-"
         if error:
+            self.status_card.height = self.theme.dp(72)
+            self.status_card.opacity = 1
             self.status_card.background_color = list(palette.danger)
             self.status_label.text = "Monitoring unavailable"
             self.detail_label.text = str(error)
-        elif running:
-            self.status_card.background_color = list(palette.surface_alt)
-            self.status_label.text = f"Listening on {interface}"
-            if self._networks:
-                self.detail_label.text = f"{len(self._networks)} access point(s) visible."
-            else:
-                self.detail_label.text = "Waiting for nearby AP beacons and probe responses..."
         else:
+            self.status_card.height = 0
+            self.status_card.opacity = 0
             self.status_card.background_color = list(palette.surface_alt)
-            self.status_label.text = "Monitoring stopped"
-            self.detail_label.text = "Start monitoring from the Dashboard to view nearby APs."
+            self.status_label.text = ""
+            self.detail_label.text = ""
