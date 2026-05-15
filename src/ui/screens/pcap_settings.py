@@ -8,7 +8,7 @@ from kivy.uix.togglebutton import ToggleButton
 
 from ..components import Card, PrimaryButton, SecondaryButton
 from ..theme import Theme
-from .settings import Stepper
+from ..widgets import Stepper
 
 
 class PcapSettingsScreen(Screen):
