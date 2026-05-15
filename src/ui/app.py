@@ -18,8 +18,8 @@ from .data import demo_alerts, demo_networks
 from .screens.alerts import AlertsScreen
 from .screens.dashboard import DashboardScreen
 from .screens.diagnostics import DiagnosticsScreen
-from .screens.history import HistoryScreen
 from .screens.networks import NetworksScreen
+from .screens.pcap_settings import PcapSettingsScreen
 from .screens.settings import SettingsScreen
 from .state import AppState
 from .theme import resolve_theme
@@ -44,8 +44,8 @@ class PWDBoxApp(App):
         self.dashboard: Optional[DashboardScreen] = None
         self.networks: Optional[NetworksScreen] = None
         self.alerts: Optional[AlertsScreen] = None
-        self.history: Optional[HistoryScreen] = None
         self.settings: Optional[SettingsScreen] = None
+        self.pcap_settings: Optional[PcapSettingsScreen] = None
         self.diagnostics: Optional[DiagnosticsScreen] = None
 
         self.load_settings()
@@ -115,15 +115,15 @@ class PWDBoxApp(App):
         self.dashboard = DashboardScreen(self, self.theme)
         self.networks = NetworksScreen(self, self.theme)
         self.alerts = AlertsScreen(self, self.theme)
-        self.history = HistoryScreen(self, self.theme)
         self.settings = SettingsScreen(self, self.theme)
+        self.pcap_settings = PcapSettingsScreen(self, self.theme)
         self.diagnostics = DiagnosticsScreen(self, self.theme)
 
         self.screen_manager.add_widget(self.dashboard)
         self.screen_manager.add_widget(self.networks)
         self.screen_manager.add_widget(self.alerts)
-        self.screen_manager.add_widget(self.history)
         self.screen_manager.add_widget(self.settings)
+        self.screen_manager.add_widget(self.pcap_settings)
         self.screen_manager.add_widget(self.diagnostics)
 
         root.add_widget(self.screen_manager)
@@ -164,12 +164,16 @@ class PWDBoxApp(App):
         self.controller.stop()
 
     def show_screen(self, name: str) -> None:
+        if name == "history":
+            name = "alerts"
         if self.screen_manager:
             self.screen_manager.current = name
         if name == "settings" and self.settings:
             self.settings.refresh()
-        if name == "history" and self.history:
-            self.history.refresh()
+        if name == "pcap_settings" and self.pcap_settings:
+            self.pcap_settings.refresh()
+        if name == "alerts" and self.alerts:
+            self.alerts.refresh_history()
 
     def process_queue(self, _dt) -> None:
         updated_networks = False
@@ -244,10 +248,10 @@ class PWDBoxApp(App):
             self.dashboard.show_alert_banner(None)
 
     def refresh_history(self, _dt) -> None:
-        if self.screen_manager and self.screen_manager.current != "history":
+        if self.screen_manager and self.screen_manager.current != "alerts":
             return
-        if self.history:
-            self.history.refresh()
+        if self.alerts:
+            self.alerts.refresh_history()
 
     def _demo_tick(self, _dt) -> None:
         self.state.status.update(

@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
-from kivy.properties import StringProperty
+from kivy.properties import NumericProperty, StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
@@ -12,8 +13,34 @@ from kivy.uix.recycleview import RecycleView
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
 from kivy.uix.screenmanager import Screen
 
+from ...storage.db import list_alert_history, list_session_summaries
 from ..components import Card
 from ..theme import Theme
+
+
+def _parse_iso(ts: Optional[str]) -> Optional[datetime]:
+    if not ts:
+        return None
+    try:
+        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _format_duration(start: Optional[str], end: Optional[str]) -> str:
+    start_dt = _parse_iso(start)
+    end_dt = _parse_iso(end)
+    if not start_dt or not end_dt:
+        return "-"
+    delta = end_dt - start_dt
+    total = int(delta.total_seconds())
+    minutes, seconds = divmod(total, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"{hours}h {minutes}m"
+    if minutes:
+        return f"{minutes}m {seconds}s"
+    return f"{seconds}s"
 
 
 class AlertRow(RecycleDataViewBehavior, BoxLayout):
@@ -75,33 +102,104 @@ class AlertRow(RecycleDataViewBehavior, BoxLayout):
         popup.open()
 
 
+class SessionRow(RecycleDataViewBehavior, BoxLayout):
+    session_id = NumericProperty(0)
+    summary = StringProperty("")
+    theme_ref: Optional[Theme] = None
+
+    def __init__(self, **kwargs) -> None:
+        theme = self.__class__.theme_ref
+        if theme is None:
+            raise RuntimeError("Theme not set for SessionRow")
+        super().__init__(orientation="horizontal", size_hint_y=None, height=theme.row_height, **kwargs)
+        self.theme = theme
+        self.label = Label(color=theme.palette.text, font_size=theme.body, halign="left")
+        self.label.bind(size=lambda *_: setattr(self.label, "text_size", self.label.size))
+        self.add_widget(self.label)
+        self.on_select = None
+
+    def refresh_view_attrs(self, rv, index, data):
+        self.session_id = data.get("session_id", 0)
+        self.summary = data.get("summary", "")
+        self.label.text = self.summary
+        self.on_select = data.get("on_select")
+        return super().refresh_view_attrs(rv, index, data)
+
+    def on_touch_down(self, touch):
+        if not self.collide_point(*touch.pos):
+            return super().on_touch_down(touch)
+        if self.on_select:
+            self.on_select(self.session_id)
+        return True
+
+
+class HistoryAlertRow(RecycleDataViewBehavior, BoxLayout):
+    theme_ref: Optional[Theme] = None
+
+    def __init__(self, **kwargs) -> None:
+        theme = self.__class__.theme_ref
+        if theme is None:
+            raise RuntimeError("Theme not set for HistoryAlertRow")
+        super().__init__(orientation="horizontal", size_hint_y=None, height=theme.row_height, **kwargs)
+        self.theme = theme
+        self.label = Label(color=theme.palette.text, font_size=theme.body, halign="left")
+        self.label.bind(size=lambda *_: setattr(self.label, "text_size", self.label.size))
+        self.add_widget(self.label)
+
+    def refresh_view_attrs(self, rv, index, data):
+        self.label.text = data.get("summary", "")
+        return super().refresh_view_attrs(rv, index, data)
+
+
+def _build_recycler(viewclass, theme: Theme) -> RecycleView:
+    recycler = RecycleView()
+    recycler.viewclass = viewclass
+    layout = RecycleBoxLayout(orientation="vertical", default_size=(None, theme.row_height))
+    layout.default_size_hint = (1, None)
+    layout.size_hint_y = None
+    layout.bind(minimum_height=layout.setter("height"))
+    recycler.add_widget(layout)
+    recycler.layout_manager = layout
+    return recycler
+
+
 class AlertsScreen(Screen):
     def __init__(self, app, theme: Theme, **kwargs) -> None:
         super().__init__(name="alerts", **kwargs)
         self.app = app
         self.theme = theme
+        self.selected_session: Optional[int] = None
 
         root = BoxLayout(
-            orientation="vertical",
+            orientation="horizontal",
             padding=[theme.gap_m, theme.gap_m, theme.gap_m, theme.gap_m],
-            spacing=theme.gap_s,
+            spacing=theme.gap_m,
         )
 
-        header = Label(text="Alerts (Live)", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(28))
-        root.add_widget(header)
-
-        list_card = Card(theme, orientation="vertical", padding=[theme.gap_s, theme.gap_s, theme.gap_s, theme.gap_s])
-        self.recycler = RecycleView()
+        live_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
+        live_card.size_hint_x = 0.5
+        live_card.add_widget(Label(text="Alerts (Live)", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24)))
         AlertRow.theme_ref = theme
-        self.recycler.viewclass = AlertRow
-        layout = RecycleBoxLayout(orientation="vertical", default_size=(None, theme.row_height))
-        layout.default_size_hint = (1, None)
-        layout.size_hint_y = None
-        layout.bind(minimum_height=layout.setter("height"))
-        self.recycler.add_widget(layout)
-        self.recycler.layout_manager = layout
-        list_card.add_widget(self.recycler)
-        root.add_widget(list_card)
+        self.live_view = _build_recycler(AlertRow, theme)
+        live_card.add_widget(self.live_view)
+        root.add_widget(live_card)
+
+        history_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
+        history_card.size_hint_x = 0.5
+        history_card.add_widget(Label(text="Alerts History", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24)))
+
+        history_card.add_widget(Label(text="Sessions", color=theme.palette.text_dim, font_size=theme.caption, size_hint_y=None, height=theme.dp(18)))
+        SessionRow.theme_ref = theme
+        self.sessions_view = _build_recycler(SessionRow, theme)
+        self.sessions_view.size_hint_y = 0.45
+        history_card.add_widget(self.sessions_view)
+
+        history_card.add_widget(Label(text="Session Alerts", color=theme.palette.text_dim, font_size=theme.caption, size_hint_y=None, height=theme.dp(18)))
+        HistoryAlertRow.theme_ref = theme
+        self.history_alerts_view = _build_recycler(HistoryAlertRow, theme)
+        self.history_alerts_view.size_hint_y = 0.55
+        history_card.add_widget(self.history_alerts_view)
+        root.add_widget(history_card)
 
         self.add_widget(root)
 
@@ -121,4 +219,42 @@ class AlertsScreen(Screen):
                     "alert_data": alert,
                 }
             )
-        self.recycler.data = rows or [{"timestamp": "", "alert_type": "", "summary": "No alerts", "pcap": "", "alert_data": {}}]
+        self.live_view.data = rows or [{"timestamp": "", "alert_type": "", "summary": "No alerts", "pcap": "", "alert_data": {}}]
+
+    def refresh_history(self) -> None:
+        sessions = list_session_summaries(limit=20, db_path=self.app.db_path)
+        rows = []
+        for session in sessions:
+            duration = _format_duration(session.get("start_time"), session.get("end_time"))
+            summary = (
+                f"#{session.get('id')} {session.get('interface') or '-'} "
+                f"{session.get('start_time')} {duration} alerts={session.get('alert_count')}"
+            )
+            rows.append(
+                {
+                    "session_id": session.get("id"),
+                    "summary": summary,
+                    "on_select": self._select_session,
+                }
+            )
+        self.sessions_view.data = rows or [{"summary": "No sessions", "session_id": 0, "on_select": None}]
+        if self.selected_session is None and sessions:
+            self.selected_session = sessions[0].get("id")
+        self._load_alerts(self.selected_session)
+
+    def _select_session(self, session_id: int) -> None:
+        self.selected_session = session_id
+        self._load_alerts(session_id)
+
+    def _load_alerts(self, session_id: Optional[int]) -> None:
+        if session_id is None:
+            self.history_alerts_view.data = [{"summary": "No alerts"}]
+            return
+        alerts = list_alert_history(limit=50, session_id=session_id, db_path=self.app.db_path)
+        rows = []
+        for alert in alerts:
+            details = alert.get("details")
+            key = details.get("key") if isinstance(details, dict) else None
+            summary = f"{alert.get('timestamp')} {alert.get('alert_type')} key={key}"
+            rows.append({"summary": summary})
+        self.history_alerts_view.data = rows or [{"summary": "No alerts"}]

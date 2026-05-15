@@ -182,9 +182,7 @@ class FooterNav(BoxLayout):
             ("dashboard", "Dashboard"),
             ("networks", "Networks"),
             ("alerts", "Alerts"),
-            ("history", "History"),
             ("settings", "Settings"),
-            ("diagnostics", "Health"),
         ):
             button = SecondaryButton(theme, text=label)
             button.size_hint_y = 1

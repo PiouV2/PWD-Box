@@ -41,7 +41,7 @@ class NetworksScreen(Screen):
         self.status_label = Label(
             text="Monitoring stopped",
             color=theme.palette.text,
-            font_size=theme.h3,
+            font_size=theme.body,
             size_hint_y=None,
             height=theme.dp(22),
             halign="left",
@@ -51,7 +51,7 @@ class NetworksScreen(Screen):
         self.detail_label = Label(
             text="Start monitoring from the Dashboard to view nearby APs.",
             color=theme.palette.text_dim,
-            font_size=theme.body,
+            font_size=theme.caption,
             size_hint_y=None,
             height=theme.dp(42),
             halign="left",

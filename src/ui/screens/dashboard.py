@@ -88,8 +88,8 @@ class DashboardScreen(Screen):
         for label, target in (
             ("Alerts", "alerts"),
             ("Networks", "networks"),
-            ("History", "history"),
             ("Settings", "settings"),
+            ("PCAP", "pcap_settings"),
         ):
             button = SecondaryButton(theme, text=label)
             button.height = theme.button_height

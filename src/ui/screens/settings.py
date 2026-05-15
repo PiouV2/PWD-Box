@@ -85,45 +85,6 @@ class SettingsScreen(Screen):
         )
         content.add_widget(capture_card)
 
-        evidence_card = self._section_card(
-            "Evidence & PCAP",
-            "Group evidence retention in one place so alert capture settings are easier to review.",
-        )
-        self.pcap_toggle = self._toggle_button(
-            "PCAP capture: ON" if self.app.app_config.evidence.pcap_enabled else "PCAP capture: OFF",
-            self.app.app_config.evidence.pcap_enabled,
-            self._toggle_pcap,
-        )
-        evidence_card.add_widget(self.pcap_toggle)
-
-        self.buffer_stepper = Stepper(
-            theme,
-            label="PCAP buffer (s)",
-            value=int(self.app.app_config.evidence.pcap_buffer_seconds),
-            step=5,
-            on_change=self._update_buffer,
-        )
-        evidence_card.add_widget(self.buffer_stepper)
-
-        self.max_files_stepper = Stepper(
-            theme,
-            label="Max PCAP files",
-            value=int(self.app.app_config.evidence.pcap_max_files),
-            step=10,
-            on_change=self._update_max_files,
-        )
-        evidence_card.add_widget(self.max_files_stepper)
-
-        self.max_mb_stepper = Stepper(
-            theme,
-            label="Max PCAP MB",
-            value=int(self.app.app_config.evidence.pcap_max_total_mb),
-            step=25,
-            on_change=self._update_max_mb,
-        )
-        evidence_card.add_widget(self.max_mb_stepper)
-        content.add_widget(evidence_card)
-
         appearance_card = self._section_card(
             "Display",
             "Theme controls stay separate from capture settings so operational changes are easy to spot.",
@@ -135,6 +96,20 @@ class SettingsScreen(Screen):
         )
         appearance_card.add_widget(self.theme_toggle)
         content.add_widget(appearance_card)
+
+        tools_card = self._section_card(
+            "Tools",
+            "Open diagnostics and evidence controls from here.",
+        )
+        nav_actions = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.button_height, spacing=theme.gap_s)
+        self.pcap_settings_button = SecondaryButton(theme, text="PCAP Settings")
+        self.health_button = SecondaryButton(theme, text="Health Checks")
+        self.pcap_settings_button.bind(on_press=lambda *_: self.app.show_screen("pcap_settings"))
+        self.health_button.bind(on_press=lambda *_: self.app.show_screen("diagnostics"))
+        nav_actions.add_widget(self.pcap_settings_button)
+        nav_actions.add_widget(self.health_button)
+        tools_card.add_widget(nav_actions)
+        content.add_widget(tools_card)
 
         scroll.add_widget(content)
         root.add_widget(scroll)
@@ -211,20 +186,6 @@ class SettingsScreen(Screen):
         self.monitor_toggle.text = "Monitor mode: Auto-enable" if enabled else "Monitor mode: Validate only"
         self.app.app_config.capture.enable_monitor = enabled
 
-    def _toggle_pcap(self, _instance) -> None:
-        enabled = self.pcap_toggle.state == "down"
-        self.pcap_toggle.text = "PCAP capture: ON" if enabled else "PCAP capture: OFF"
-        self.app.app_config.evidence.pcap_enabled = enabled
-
-    def _update_buffer(self, value: int) -> None:
-        self.app.app_config.evidence.pcap_buffer_seconds = float(value)
-
-    def _update_max_files(self, value: int) -> None:
-        self.app.app_config.evidence.pcap_max_files = int(value)
-
-    def _update_max_mb(self, value: int) -> None:
-        self.app.app_config.evidence.pcap_max_total_mb = int(value)
-
     def _toggle_theme(self, _instance) -> None:
         mode = "dark" if self.theme_toggle.state == "down" else "light"
         self.theme_toggle.text = "Theme: Dark" if mode == "dark" else "Theme: Light"
@@ -245,13 +206,5 @@ class SettingsScreen(Screen):
             if self.app.app_config.capture.enable_monitor
             else "Monitor mode: Validate only"
         )
-        self.pcap_toggle.state = "down" if self.app.app_config.evidence.pcap_enabled else "normal"
-        self.pcap_toggle.text = "PCAP capture: ON" if self.app.app_config.evidence.pcap_enabled else "PCAP capture: OFF"
-        self.buffer_stepper.value = int(self.app.app_config.evidence.pcap_buffer_seconds)
-        self.buffer_stepper.value_label.text = str(self.buffer_stepper.value)
-        self.max_files_stepper.value = int(self.app.app_config.evidence.pcap_max_files)
-        self.max_files_stepper.value_label.text = str(self.max_files_stepper.value)
-        self.max_mb_stepper.value = int(self.app.app_config.evidence.pcap_max_total_mb)
-        self.max_mb_stepper.value_label.text = str(self.max_mb_stepper.value)
         self.theme_toggle.state = "down" if self.app.theme_mode == "dark" else "normal"
         self.theme_toggle.text = "Theme: Dark" if self.app.theme_mode == "dark" else "Theme: Light"
