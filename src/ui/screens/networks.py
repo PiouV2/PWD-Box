@@ -42,7 +42,7 @@ class NetworkRow(RecycleDataViewBehavior, BoxLayout):
         self.ssid = data.get("ssid", "")
         self.bssid = data.get("bssid", "")
         self.rssi = str(data.get("rssi", "-"))
-        self.seen = str(data.get("age_seconds", "-"))
+        self.seen = str(data.get("seen", "-"))
         self.label_ssid.text = self.ssid
         self.label_bssid.text = self.bssid
         self.label_rssi.text = self.rssi
@@ -131,8 +131,8 @@ class NetworksScreen(Screen):
                     "ssid": ssid,
                     "bssid": bssid_short,
                     "rssi": str(rssi) if rssi is not None else "-",
-                    "age_seconds": str(age) if age is not None else "0",
+                    "seen": str(age) if age is not None else "0",
                 }
             )
         placeholder = f"No networks ({self._filter_mode})"
-        self.recycler.data = rows or [{"ssid": placeholder, "bssid": "", "rssi": "", "age_seconds": ""}]
+        self.recycler.data = rows or [{"ssid": placeholder, "bssid": "", "rssi": "", "seen": ""}]
