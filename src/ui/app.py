@@ -36,8 +36,7 @@ class PWDBoxApp(App):
         self.state = AppState()
         self.theme_mode = "dark"
         self.theme = resolve_theme(self.theme_mode)
-        self.interface_choice = None
-        self.network_filter_mode = "weak"
+        self.interface_choice = "wlan1"
 
         self.screen_manager: Optional[ScreenManager] = None
         self.header_bar: Optional[HeaderBar] = None
@@ -52,11 +51,6 @@ class PWDBoxApp(App):
         self.load_settings()
 
     def load_settings(self) -> None:
-        self.interface_choice = get_setting(
-            "interface",
-            get_setting("last_interface", self.app_config.capture.interface or "wlan0", db_path=self.db_path),
-            db_path=self.db_path,
-        )
         self.app_config.capture.interface = self.interface_choice
         self.theme_mode = get_setting("theme_mode", "dark", db_path=self.db_path)
         self.app_config.evidence.pcap_enabled = bool(
@@ -71,10 +65,6 @@ class PWDBoxApp(App):
         self.app_config.evidence.pcap_max_total_mb = int(
             get_setting("pcap_max_total_mb", self.app_config.evidence.pcap_max_total_mb, db_path=self.db_path)
         )
-        self.network_filter_mode = get_setting("network_filter_mode", "weak", db_path=self.db_path)
-        if self.network_filter_mode not in {"weak", "strong", "all"}:
-            self.network_filter_mode = "weak"
-        self.controller.set_network_filter_mode(self.network_filter_mode)
         self.theme = resolve_theme(self.theme_mode)
 
     def persist_settings(self) -> None:
@@ -84,7 +74,6 @@ class PWDBoxApp(App):
         set_setting("pcap_buffer_seconds", self.app_config.evidence.pcap_buffer_seconds, db_path=self.db_path)
         set_setting("pcap_max_files", self.app_config.evidence.pcap_max_files, db_path=self.db_path)
         set_setting("pcap_max_total_mb", self.app_config.evidence.pcap_max_total_mb, db_path=self.db_path)
-        set_setting("network_filter_mode", self.network_filter_mode, db_path=self.db_path)
         set_setting("theme_mode", self.theme_mode, db_path=self.db_path)
         if self.header_bar:
             self.header_bar.set_message("Settings saved")
@@ -143,15 +132,7 @@ class PWDBoxApp(App):
         self.state.session_alert_count = 0
         self.state.last_alert_time = None
         self.state.last_error = None
-        iface = self.interface_choice or self.app_config.capture.interface
-        self.controller.start(interface=iface, network_filter_mode=self.network_filter_mode)
-
-    def set_network_filter_mode(self, mode: str) -> None:
-        if mode not in {"weak", "strong", "all"}:
-            mode = "weak"
-        self.network_filter_mode = mode
-        set_setting("network_filter_mode", mode, db_path=self.db_path)
-        self.controller.set_network_filter_mode(mode)
+        self.controller.start(interface=self.interface_choice)
 
     def stop_monitoring(self) -> None:
         self.controller.stop()
@@ -182,11 +163,6 @@ class PWDBoxApp(App):
                 self.state.last_error = message if message else None
             elif event_type == "networks":
                 self.state.networks = data.get("items", [])
-                filter_mode = data.get("filter_mode")
-                if filter_mode in {"weak", "strong", "all"}:
-                    self.network_filter_mode = filter_mode
-                    if self.networks:
-                        self.networks.set_filter_mode(filter_mode)
                 updated_networks = True
             elif event_type == "alert":
                 self.state.alerts.insert(0, data)
@@ -252,7 +228,7 @@ class PWDBoxApp(App):
                 "adapter_ok": True,
                 "monitor_mode": True,
                 "logging_on": True,
-                "interface": self.interface_choice or "wlan0",
+                "interface": self.interface_choice,
             }
         )
         self.state.networks = demo_networks()
