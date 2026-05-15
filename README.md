@@ -27,17 +27,22 @@ pip install -r requirements.txt
 
 Run health checks (replace `wlan1` with your monitor interface):
 ```bash
-sudo .venv/bin/python -m pwdbox.main health-check --interface wlan1
+sudo env PYTHONPATH=. .venv/bin/python -m src.main health-check --interface wlan1
 ```
 
 Start passive monitoring:
 ```bash
-sudo .venv/bin/python -m pwdbox.main monitor --interface wlan1
+sudo env PYTHONPATH=. .venv/bin/python -m src.main monitor --interface wlan1
 ```
 
 Start the touchscreen UI:
 ```bash
-sudo .venv/bin/python -m pwdbox.main ui
+sudo env PYTHONPATH=. .venv/bin/python -m src.ui
+```
+
+UI smoke test (boots UI with demo data, no sniffing):
+```bash
+PYTHONPATH=. .venv/bin/python scripts/ui_smoke_test.py
 ```
 
 Run the (safe) tests:

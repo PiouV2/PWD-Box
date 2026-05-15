@@ -257,6 +257,24 @@ def list_sessions(
         return [dict(row) for row in cursor.fetchall()]
 
 
+def list_session_summaries(
+    limit: int = 50,
+    db_path: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    query = (
+        "SELECT s.id, s.interface, s.start_time, s.end_time, s.status, "
+        "COUNT(a.id) as alert_count "
+        "FROM sessions s "
+        "LEFT JOIN alerts a ON a.session_id = s.id "
+        "GROUP BY s.id "
+        "ORDER BY s.start_time DESC, s.id DESC "
+        "LIMIT ?"
+    )
+    with _connect(db_path) as conn:
+        cursor = conn.execute(query, (int(limit),))
+        return [dict(row) for row in cursor.fetchall()]
+
+
 def set_setting(key: str, value: Any, db_path: Optional[str] = None) -> None:
     payload = json.dumps(value)
     with _connect(db_path) as conn:
