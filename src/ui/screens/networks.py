@@ -18,7 +18,7 @@ from ..theme import Theme
 class NetworkRow(RecycleDataViewBehavior, BoxLayout):
     ssid = StringProperty("")
     bssid = StringProperty("")
-    channel = StringProperty("-")
+    seen = StringProperty("-")
     rssi = StringProperty("-")
     theme_ref: Optional[Theme] = None
 
@@ -31,22 +31,22 @@ class NetworkRow(RecycleDataViewBehavior, BoxLayout):
         self.spacing = theme.gap_s
         self.label_ssid = Label(color=theme.palette.text, font_size=theme.body, size_hint_x=0.42)
         self.label_bssid = Label(color=theme.palette.text_dim, font_size=theme.body, size_hint_x=0.3)
-        self.label_channel = Label(color=theme.palette.text_dim, font_size=theme.body, size_hint_x=0.14)
         self.label_rssi = Label(color=theme.palette.text, font_size=theme.body, size_hint_x=0.14)
+        self.label_seen = Label(color=theme.palette.text_dim, font_size=theme.body, size_hint_x=0.14)
         self.add_widget(self.label_ssid)
         self.add_widget(self.label_bssid)
-        self.add_widget(self.label_channel)
         self.add_widget(self.label_rssi)
+        self.add_widget(self.label_seen)
 
     def refresh_view_attrs(self, rv, index, data):
         self.ssid = data.get("ssid", "")
         self.bssid = data.get("bssid", "")
-        self.channel = data.get("channel", "-")
-        self.rssi = data.get("rssi", "-")
+        self.rssi = str(data.get("rssi", "-"))
+        self.seen = str(data.get("age_seconds", "-"))
         self.label_ssid.text = self.ssid
         self.label_bssid.text = self.bssid
-        self.label_channel.text = self.channel
         self.label_rssi.text = self.rssi
+        self.label_seen.text = self.seen
         return super().refresh_view_attrs(rv, index, data)
 
 
@@ -82,8 +82,8 @@ class NetworksScreen(Screen):
         table_header = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.row_height_compact)
         table_header.add_widget(Label(text="SSID", color=theme.palette.text_dim, font_size=theme.caption, size_hint_x=0.42))
         table_header.add_widget(Label(text="BSSID", color=theme.palette.text_dim, font_size=theme.caption, size_hint_x=0.3))
-        table_header.add_widget(Label(text="CH", color=theme.palette.text_dim, font_size=theme.caption, size_hint_x=0.14))
         table_header.add_widget(Label(text="RSSI", color=theme.palette.text_dim, font_size=theme.caption, size_hint_x=0.14))
+        table_header.add_widget(Label(text="Seen(s)", color=theme.palette.text_dim, font_size=theme.caption, size_hint_x=0.14))
         root.add_widget(table_header)
 
         list_card = Card(theme, orientation="vertical", padding=[theme.gap_s, theme.gap_s, theme.gap_s, theme.gap_s])
@@ -124,15 +124,15 @@ class NetworksScreen(Screen):
             ssid = item.get("ssid") or "<hidden>"
             bssid = item.get("bssid") or "-"
             bssid_short = bssid if len(bssid) <= 12 else f"{bssid[:5]}..{bssid[-4:]}"
-            channel = item.get("channel")
             rssi = item.get("rssi")
+            age = item.get("age_seconds")
             rows.append(
                 {
                     "ssid": ssid,
                     "bssid": bssid_short,
-                    "channel": str(channel) if channel is not None else "-",
                     "rssi": str(rssi) if rssi is not None else "-",
+                    "age_seconds": str(age) if age is not None else "0",
                 }
             )
         placeholder = f"No networks ({self._filter_mode})"
-        self.recycler.data = rows or [{"ssid": placeholder, "bssid": "", "channel": "", "rssi": ""}]
+        self.recycler.data = rows or [{"ssid": placeholder, "bssid": "", "rssi": "", "age_seconds": ""}]

@@ -230,7 +230,9 @@ class PWDBoxApp(App):
         self.dashboard.update_status(status, state_text, tone)
         self.dashboard.update_alert_summary(self.state.last_alert_time, self.state.session_alert_count)
 
-        if self.state.alerts:
+        if self.state.last_error:
+            self.dashboard.show_alert_banner(self.state.last_error)
+        elif self.state.alerts:
             latest = self.state.alerts[0]
             banner_text = f"Alert: {latest.get('alert_type')} {latest.get('key')}"
             self.dashboard.show_alert_banner(banner_text)
