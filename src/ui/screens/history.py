@@ -116,6 +116,7 @@ class HistoryScreen(Screen):
         layout.default_size_hint = (1, None)
         layout.size_hint_y = None
         layout.bind(minimum_height=layout.setter("height"))
+        self.sessions_view.add_widget(layout)
         self.sessions_view.layout_manager = layout
         self.sessions_card.add_widget(self.sessions_view)
         root.add_widget(self.sessions_card)
@@ -131,6 +132,7 @@ class HistoryScreen(Screen):
         layout_alerts.default_size_hint = (1, None)
         layout_alerts.size_hint_y = None
         layout_alerts.bind(minimum_height=layout_alerts.setter("height"))
+        self.alerts_view.add_widget(layout_alerts)
         self.alerts_view.layout_manager = layout_alerts
         self.alerts_card.add_widget(self.alerts_view)
         root.add_widget(self.alerts_card)

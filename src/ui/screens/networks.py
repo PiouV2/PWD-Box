@@ -94,6 +94,7 @@ class NetworksScreen(Screen):
         layout.default_size_hint = (1, None)
         layout.size_hint_y = None
         layout.bind(minimum_height=layout.setter("height"))
+        self.recycler.add_widget(layout)
         self.recycler.layout_manager = layout
         list_card.add_widget(self.recycler)
         root.add_widget(list_card)

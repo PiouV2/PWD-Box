@@ -62,6 +62,7 @@ class DiagnosticsScreen(Screen):
         layout.default_size_hint = (1, None)
         layout.size_hint_y = None
         layout.bind(minimum_height=layout.setter("height"))
+        self.results_view.add_widget(layout)
         self.results_view.layout_manager = layout
         list_card.add_widget(self.results_view)
         root.add_widget(list_card)
