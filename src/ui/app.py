@@ -36,7 +36,7 @@ class PWDBoxApp(App):
         self.state = AppState()
         self.theme_mode = "dark"
         self.theme = resolve_theme(self.theme_mode)
-        self.interface_choice = "wlan1"
+        self.interface_choice = self.app_config.capture.interface or "wlan1"
 
         self.screen_manager: Optional[ScreenManager] = None
         self.header_bar: Optional[HeaderBar] = None
@@ -51,7 +51,18 @@ class PWDBoxApp(App):
         self.load_settings()
 
     def load_settings(self) -> None:
+        default_interface = self.app_config.capture.interface or self.interface_choice or "wlan1"
+        self.interface_choice = str(
+            get_setting(
+                "interface",
+                get_setting("last_interface", default_interface, db_path=self.db_path),
+                db_path=self.db_path,
+            )
+        )
         self.app_config.capture.interface = self.interface_choice
+        self.app_config.capture.enable_monitor = bool(
+            get_setting("enable_monitor", self.app_config.capture.enable_monitor, db_path=self.db_path)
+        )
         self.theme_mode = get_setting("theme_mode", "dark", db_path=self.db_path)
         self.app_config.evidence.pcap_enabled = bool(
             get_setting("pcap_enabled", self.app_config.evidence.pcap_enabled, db_path=self.db_path)
@@ -70,6 +81,7 @@ class PWDBoxApp(App):
     def persist_settings(self) -> None:
         set_setting("interface", self.interface_choice, db_path=self.db_path)
         set_setting("last_interface", self.interface_choice, db_path=self.db_path)
+        set_setting("enable_monitor", self.app_config.capture.enable_monitor, db_path=self.db_path)
         set_setting("pcap_enabled", self.app_config.evidence.pcap_enabled, db_path=self.db_path)
         set_setting("pcap_buffer_seconds", self.app_config.evidence.pcap_buffer_seconds, db_path=self.db_path)
         set_setting("pcap_max_files", self.app_config.evidence.pcap_max_files, db_path=self.db_path)
@@ -123,15 +135,29 @@ class PWDBoxApp(App):
     def on_start(self) -> None:
         Clock.schedule_interval(self.process_queue, 0.25)
         Clock.schedule_interval(self.refresh_history, 5.0)
+        if self.networks:
+            self.networks.update_status(self.state.status, self.state.running, self.state.last_error)
         if self.demo:
             Clock.schedule_interval(self._demo_tick, 1.0)
 
     def start_monitoring(self) -> None:
         self.header_bar.set_message(None)
+        self.state.status = {
+            "adapter_ok": False,
+            "monitor_mode": False,
+            "logging_on": False,
+            "running": False,
+            "interface": self.interface_choice,
+            "message": None,
+        }
+        self.state.networks = []
         self.state.alerts = []
         self.state.session_alert_count = 0
         self.state.last_alert_time = None
         self.state.last_error = None
+        if self.networks:
+            self.networks.update_networks(self.state.networks)
+            self.networks.update_status(self.state.status, self.state.running, self.state.last_error)
         self.controller.start(interface=self.interface_choice)
 
     def stop_monitoring(self) -> None:
@@ -174,8 +200,10 @@ class PWDBoxApp(App):
                 self.state.running = False
 
         self._update_dashboard()
-        if updated_networks and self.networks:
-            self.networks.update_networks(self.state.networks)
+        if self.networks:
+            if updated_networks:
+                self.networks.update_networks(self.state.networks)
+            self.networks.update_status(self.state.status, self.state.running, self.state.last_error)
         if updated_alerts and self.alerts:
             self.alerts.update_alerts(self.state.alerts)
 

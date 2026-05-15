@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections import deque
 import logging
+import os
 import queue
 import signal
 import threading
@@ -86,7 +87,10 @@ class SessionManager:
 
         if not ensure_monitor_mode(iface, self.config.capture.enable_monitor):
             logging.error("Monitor mode could not be enabled on %s.", iface)
-            self._emit_status(monitor_mode=False, message="Monitor mode failed")
+            self._emit_status(
+                monitor_mode=False,
+                message=self._capture_error_message(iface, "Monitor mode setup failed"),
+            )
             self._close_session("error")
             return 2
         self._emit_status(monitor_mode=True)
@@ -100,11 +104,14 @@ class SessionManager:
                 "Capture test failed: no 802.11 management frames seen on %s.",
                 iface,
             )
-            self._emit_status(adapter_ok=False, message="Capture test failed")
+            self._emit_status(
+                adapter_ok=False,
+                message=self._capture_error_message(iface, "Capture test failed"),
+            )
             self._close_session("error")
             return 3
 
-        self._emit_status(adapter_ok=True, running=True)
+        self._emit_status(adapter_ok=True, running=True, message=None)
         if install_signal_handlers:
             self._install_signal_handlers()
         logging.info("Starting passive capture on %s.", iface)
@@ -121,10 +128,13 @@ class SessionManager:
             )
         except Exception as exc:
             logging.exception("Capture error: %s", exc)
-            self._emit_status(message=str(exc))
+            self._emit_status(message=f"Capture error on {iface}: {exc}")
             exit_code = 4
         logging.info("Capture stopped.")
-        self._emit_status(running=False)
+        self._emit_status(
+            running=False,
+            message=None if exit_code == 0 else self.status.get("message"),
+        )
         self._close_session("stopped" if self.stop_event.is_set() else "ended")
         return exit_code
 
@@ -137,6 +147,14 @@ class SessionManager:
 
     def stop(self) -> None:
         self.stop_event.set()
+
+    def _capture_error_message(self, iface: str, prefix: str) -> str:
+        if os.geteuid() != 0:
+            return (
+                f"{prefix} on {iface}. Run the UI with sudo or grant "
+                "CAP_NET_ADMIN and CAP_NET_RAW."
+            )
+        return f"{prefix} on {iface}. Check monitor-mode support and adapter state."
 
     def _emit_event(self, event_type: str, data: Dict[str, Any]) -> None:
         if not self.event_queue:

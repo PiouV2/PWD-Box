@@ -29,8 +29,8 @@ class NetworkRow(RecycleDataViewBehavior, BoxLayout):
         super().__init__(orientation="horizontal", size_hint_y=None, height=theme.row_height, **kwargs)
         self.theme = theme
         self.spacing = theme.gap_s
-        self.label_ssid = Label(color=theme.palette.text, font_size=theme.body, size_hint_x=0.42)
-        self.label_bssid = Label(color=theme.palette.text_dim, font_size=theme.body, size_hint_x=0.3)
+        self.label_ssid = Label(color=theme.palette.text, font_size=theme.body, size_hint_x=0.38)
+        self.label_bssid = Label(color=theme.palette.text_dim, font_size=theme.body, size_hint_x=0.34)
         self.label_rssi = Label(color=theme.palette.text, font_size=theme.body, size_hint_x=0.14)
         self.label_seen = Label(color=theme.palette.text_dim, font_size=theme.body, size_hint_x=0.14)
         self.add_widget(self.label_ssid)
@@ -67,9 +67,34 @@ class NetworksScreen(Screen):
         header.add_widget(Label(text="Networks (Live)", color=theme.palette.text, font_size=theme.h2, size_hint_x=0.7))
         root.add_widget(header)
 
+        self.status_card = Card(theme, orientation="vertical", padding=theme.gap_s, spacing=theme.gap_xs)
+        self.status_label = Label(
+            text="Monitoring stopped",
+            color=theme.palette.text,
+            font_size=theme.h3,
+            size_hint_y=None,
+            height=theme.dp(22),
+            halign="left",
+            valign="middle",
+        )
+        self.status_label.bind(size=lambda *_: setattr(self.status_label, "text_size", self.status_label.size))
+        self.detail_label = Label(
+            text="Start monitoring from the Dashboard to view nearby APs.",
+            color=theme.palette.text_dim,
+            font_size=theme.body,
+            size_hint_y=None,
+            height=theme.dp(42),
+            halign="left",
+            valign="middle",
+        )
+        self.detail_label.bind(size=lambda *_: setattr(self.detail_label, "text_size", self.detail_label.size))
+        self.status_card.add_widget(self.status_label)
+        self.status_card.add_widget(self.detail_label)
+        root.add_widget(self.status_card)
+
         table_header = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.row_height_compact)
-        table_header.add_widget(Label(text="SSID", color=theme.palette.text_dim, font_size=theme.caption, size_hint_x=0.42))
-        table_header.add_widget(Label(text="BSSID", color=theme.palette.text_dim, font_size=theme.caption, size_hint_x=0.3))
+        table_header.add_widget(Label(text="SSID", color=theme.palette.text_dim, font_size=theme.caption, size_hint_x=0.38))
+        table_header.add_widget(Label(text="BSSID", color=theme.palette.text_dim, font_size=theme.caption, size_hint_x=0.34))
         table_header.add_widget(Label(text="RSSI", color=theme.palette.text_dim, font_size=theme.caption, size_hint_x=0.14))
         table_header.add_widget(Label(text="Seen(s)", color=theme.palette.text_dim, font_size=theme.caption, size_hint_x=0.14))
         root.add_widget(table_header)
@@ -89,6 +114,7 @@ class NetworksScreen(Screen):
         root.add_widget(list_card)
 
         self.add_widget(root)
+        self.update_networks([])
 
     def update_networks(self, networks: List[Dict[str, object]]) -> None:
         self._networks = networks
@@ -96,16 +122,39 @@ class NetworksScreen(Screen):
         for item in networks:
             ssid = item.get("ssid") or "<hidden>"
             bssid = item.get("bssid") or "-"
-            bssid_short = bssid if len(bssid) <= 12 else f"{bssid[:5]}..{bssid[-4:]}"
             rssi = item.get("rssi")
             age = item.get("age_seconds")
             rows.append(
                 {
                     "ssid": ssid,
-                    "bssid": bssid_short,
+                    "bssid": bssid,
                     "rssi": str(rssi) if rssi is not None else "-",
                     "seen": str(age) if age is not None else "0",
                 }
             )
-        placeholder = "No networks"
+        placeholder = "No APs yet"
         self.recycler.data = rows or [{"ssid": placeholder, "bssid": "", "rssi": "", "seen": ""}]
+
+    def update_status(
+        self,
+        status: Dict[str, object],
+        running: bool,
+        error: Optional[str],
+    ) -> None:
+        palette = self.theme.palette
+        interface = status.get("interface") or getattr(self.app, "interface_choice", None) or "-"
+        if error:
+            self.status_card.background_color = list(palette.danger)
+            self.status_label.text = "Monitoring unavailable"
+            self.detail_label.text = str(error)
+        elif running:
+            self.status_card.background_color = list(palette.surface_alt)
+            self.status_label.text = f"Listening on {interface}"
+            if self._networks:
+                self.detail_label.text = f"{len(self._networks)} access point(s) visible."
+            else:
+                self.detail_label.text = "Waiting for nearby AP beacons and probe responses..."
+        else:
+            self.status_card.background_color = list(palette.surface_alt)
+            self.status_label.text = "Monitoring stopped"
+            self.detail_label.text = "Start monitoring from the Dashboard to view nearby APs."

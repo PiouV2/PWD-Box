@@ -29,21 +29,35 @@ class MonitorController:
             self.thread.start()
 
     def _run(self, interface: Optional[str]) -> None:
-        if self.session is None:
+        with self._lock:
+            session = self.session
+            thread = self.thread
+        if session is None:
             return
-        exit_code = self.session.run(
+        exit_code = session.run(
             interface=interface,
             install_signal_handlers=False,
             render_console=False,
         )
         self.event_queue.put({"type": "stopped", "data": {"code": exit_code}})
+        with self._lock:
+            if self.thread is thread:
+                self.thread = None
+                self.session = None
 
     def stop(self) -> None:
         with self._lock:
-            if self.session:
-                self.session.stop()
-            if self.thread:
-                self.thread.join(timeout=2.0)
+            session = self.session
+            thread = self.thread
+        if session:
+            session.stop()
+        if thread and thread.is_alive():
+            thread.join(timeout=2.0)
+        with self._lock:
+            if self.thread is thread and (thread is None or not thread.is_alive()):
+                self.thread = None
+                self.session = None
 
     def is_running(self) -> bool:
-        return bool(self.thread and self.thread.is_alive())
+        with self._lock:
+            return bool(self.thread and self.thread.is_alive())

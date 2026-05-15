@@ -5,6 +5,8 @@ from typing import Callable
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.textinput import TextInput
 from kivy.uix.togglebutton import ToggleButton
 
 from ..components import Card, PrimaryButton, SecondaryButton
@@ -51,31 +53,47 @@ class SettingsScreen(Screen):
         header = Label(text="Settings", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(28))
         root.add_widget(header)
 
-        interface_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
-        interface_card.add_widget(Label(text="Interface", color=theme.palette.text, font_size=theme.h3, size_hint_y=None, height=theme.dp(22)))
-        self.interface_label = Label(
-            text="wlan1",
-            color=theme.palette.text,
-            font_size=theme.body,
-            size_hint_y=None,
-            height=theme.button_height,
+        scroll = ScrollView(do_scroll_x=False)
+        content = BoxLayout(orientation="vertical", spacing=theme.gap_m, size_hint_y=None)
+        content.bind(minimum_height=content.setter("height"))
+
+        capture_card = self._section_card(
+            "Capture",
+            "Choose the interface used by the shared monitor backend and whether the UI should try to enable monitor mode.",
         )
-        interface_card.add_widget(self.interface_label)
-        root.add_widget(interface_card)
-
-        evidence_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
-        evidence_card.add_widget(Label(text="Evidence", color=theme.palette.text, font_size=theme.h3, size_hint_y=None, height=theme.dp(22)))
-
-        self.pcap_toggle = ToggleButton(
-            text="PCAP capture: ON" if self.app.app_config.evidence.pcap_enabled else "PCAP capture: OFF",
-            state="down" if self.app.app_config.evidence.pcap_enabled else "normal",
+        self.interface_input = TextInput(
+            text=self.app.interface_choice,
+            multiline=False,
             size_hint_y=None,
             height=theme.button_height,
             background_normal="",
+            background_active="",
             background_color=theme.palette.surface_alt,
-            color=theme.palette.text,
+            foreground_color=theme.palette.text,
+            cursor_color=theme.palette.text,
+            padding=[theme.gap_s, theme.gap_s, theme.gap_s, theme.gap_s],
         )
-        self.pcap_toggle.bind(on_press=self._toggle_pcap)
+        capture_card.add_widget(self._field("Capture interface", self.interface_input))
+        self.monitor_toggle = self._toggle_button(
+            "Monitor mode: Auto-enable" if self.app.app_config.capture.enable_monitor else "Monitor mode: Validate only",
+            self.app.app_config.capture.enable_monitor,
+            self._toggle_monitor,
+        )
+        capture_card.add_widget(self.monitor_toggle)
+        capture_card.add_widget(
+            self._body_label("Passive capture still needs sudo or CAP_NET_ADMIN/CAP_NET_RAW on the device.")
+        )
+        content.add_widget(capture_card)
+
+        evidence_card = self._section_card(
+            "Evidence & PCAP",
+            "Group evidence retention in one place so alert capture settings are easier to review.",
+        )
+        self.pcap_toggle = self._toggle_button(
+            "PCAP capture: ON" if self.app.app_config.evidence.pcap_enabled else "PCAP capture: OFF",
+            self.app.app_config.evidence.pcap_enabled,
+            self._toggle_pcap,
+        )
         evidence_card.add_widget(self.pcap_toggle)
 
         self.buffer_stepper = Stepper(
@@ -104,22 +122,22 @@ class SettingsScreen(Screen):
             on_change=self._update_max_mb,
         )
         evidence_card.add_widget(self.max_mb_stepper)
-        root.add_widget(evidence_card)
+        content.add_widget(evidence_card)
 
-        ui_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
-        ui_card.add_widget(Label(text="UI", color=theme.palette.text, font_size=theme.h3, size_hint_y=None, height=theme.dp(22)))
-        self.theme_toggle = ToggleButton(
-            text="Theme: Dark" if self.app.theme_mode == "dark" else "Theme: Light",
-            state="down" if self.app.theme_mode == "dark" else "normal",
-            size_hint_y=None,
-            height=theme.button_height,
-            background_normal="",
-            background_color=theme.palette.surface_alt,
-            color=theme.palette.text,
+        appearance_card = self._section_card(
+            "Display",
+            "Theme controls stay separate from capture settings so operational changes are easy to spot.",
         )
-        self.theme_toggle.bind(on_press=self._toggle_theme)
-        ui_card.add_widget(self.theme_toggle)
-        root.add_widget(ui_card)
+        self.theme_toggle = self._toggle_button(
+            "Theme: Dark" if self.app.theme_mode == "dark" else "Theme: Light",
+            self.app.theme_mode == "dark",
+            self._toggle_theme,
+        )
+        appearance_card.add_widget(self.theme_toggle)
+        content.add_widget(appearance_card)
+
+        scroll.add_widget(content)
+        root.add_widget(scroll)
 
         actions = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.button_height, spacing=theme.gap_s)
         self.save_button = PrimaryButton(theme, text="Save")
@@ -131,6 +149,67 @@ class SettingsScreen(Screen):
         root.add_widget(actions)
 
         self.add_widget(root)
+
+    def _section_card(self, title: str, description: str) -> Card:
+        card = Card(self.theme, orientation="vertical", padding=self.theme.gap_m, spacing=self.theme.gap_s)
+        card.add_widget(
+            Label(
+                text=title,
+                color=self.theme.palette.text,
+                font_size=self.theme.h3,
+                size_hint_y=None,
+                height=self.theme.dp(22),
+            )
+        )
+        card.add_widget(self._body_label(description))
+        return card
+
+    def _body_label(self, text: str) -> Label:
+        label = Label(
+            text=text,
+            color=self.theme.palette.text_dim,
+            font_size=self.theme.body,
+            size_hint_y=None,
+            height=self.theme.dp(40),
+            halign="left",
+            valign="middle",
+        )
+        label.bind(size=lambda *_: setattr(label, "text_size", label.size))
+        return label
+
+    def _field(self, label_text: str, widget) -> BoxLayout:
+        layout = BoxLayout(orientation="vertical", size_hint_y=None, height=self.theme.dp(76), spacing=self.theme.gap_xs)
+        label = Label(
+            text=label_text,
+            color=self.theme.palette.text_dim,
+            font_size=self.theme.caption,
+            size_hint_y=None,
+            height=self.theme.dp(18),
+            halign="left",
+            valign="middle",
+        )
+        label.bind(size=lambda *_: setattr(label, "text_size", label.size))
+        layout.add_widget(label)
+        layout.add_widget(widget)
+        return layout
+
+    def _toggle_button(self, text: str, enabled: bool, handler) -> ToggleButton:
+        button = ToggleButton(
+            text=text,
+            state="down" if enabled else "normal",
+            size_hint_y=None,
+            height=self.theme.button_height,
+            background_normal="",
+            background_color=self.theme.palette.surface_alt,
+            color=self.theme.palette.text,
+        )
+        button.bind(on_press=handler)
+        return button
+
+    def _toggle_monitor(self, _instance) -> None:
+        enabled = self.monitor_toggle.state == "down"
+        self.monitor_toggle.text = "Monitor mode: Auto-enable" if enabled else "Monitor mode: Validate only"
+        self.app.app_config.capture.enable_monitor = enabled
 
     def _toggle_pcap(self, _instance) -> None:
         enabled = self.pcap_toggle.state == "down"
@@ -152,11 +231,20 @@ class SettingsScreen(Screen):
         self.app.set_theme(mode)
 
     def _save(self) -> None:
-        self.app.interface_choice = "wlan1"
-        self.app.app_config.capture.interface = self.app.interface_choice
+        interface = self.interface_input.text.strip() or self.app.app_config.capture.interface or "wlan1"
+        self.interface_input.text = interface
+        self.app.interface_choice = interface
+        self.app.app_config.capture.interface = interface
         self.app.persist_settings()
 
     def refresh(self) -> None:
+        self.interface_input.text = self.app.interface_choice
+        self.monitor_toggle.state = "down" if self.app.app_config.capture.enable_monitor else "normal"
+        self.monitor_toggle.text = (
+            "Monitor mode: Auto-enable"
+            if self.app.app_config.capture.enable_monitor
+            else "Monitor mode: Validate only"
+        )
         self.pcap_toggle.state = "down" if self.app.app_config.evidence.pcap_enabled else "normal"
         self.pcap_toggle.text = "PCAP capture: ON" if self.app.app_config.evidence.pcap_enabled else "PCAP capture: OFF"
         self.buffer_stepper.value = int(self.app.app_config.evidence.pcap_buffer_seconds)
