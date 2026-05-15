@@ -34,12 +34,9 @@ class SessionManager:
         self,
         config: Config,
         event_queue: Optional[queue.Queue] = None,
-        network_filter_mode: str = "all",
     ) -> None:
         self.config = config
         self.event_queue = event_queue
-        self._mode_lock = threading.RLock()
-        self._network_filter_mode = self._normalize_filter_mode(network_filter_mode)
         self.ap_table: Dict[str, NetworkInfo] = {}
         self.alerts: Deque[str] = deque(maxlen=5)
         self.deauth_seen = 0
@@ -52,7 +49,6 @@ class SessionManager:
             "logging_on": False,
             "running": False,
             "interface": None,
-            "network_filter_mode": self._network_filter_mode,
             "message": None,
         }
         self.detector = DeauthDetector(
@@ -141,23 +137,6 @@ class SessionManager:
 
     def stop(self) -> None:
         self.stop_event.set()
-
-    def _normalize_filter_mode(self, mode: Optional[str]) -> str:
-        return "all"
-
-    def set_network_filter_mode(self, mode: str) -> None:
-        with self._mode_lock:
-            if self._network_filter_mode == "all":
-                return
-            self._network_filter_mode = "all"
-            self.status["network_filter_mode"] = "all"
-        self._emit_status(network_filter_mode="all")
-        self._emit_event("network_filter", {"mode": "all"})
-        self._emit_networks(time.time())
-
-    def _current_network_filter_mode(self) -> str:
-        with self._mode_lock:
-            return self._network_filter_mode
 
     def _emit_event(self, event_type: str, data: Dict[str, Any]) -> None:
         if not self.event_queue:
@@ -325,7 +304,7 @@ class SessionManager:
                     "age_seconds": int(now - info.last_seen),
                 }
             )
-        self._emit_event("networks", {"items": items, "timestamp": now, "filter_mode": "all"})
+        self._emit_event("networks", {"items": items, "timestamp": now})
 
     def _log_network_snapshots(self, now: float) -> None:
         if self.session_id is None:
