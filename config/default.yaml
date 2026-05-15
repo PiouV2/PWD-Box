@@ -7,6 +7,9 @@ capture:
 scanner:
   ap_stale_seconds: 60
   render_interval_seconds: 2
+  channel_hop_enabled: true
+  channel_hop_interval_seconds: 2
+  channels: [1, 6, 11]
 
 deauth:
   window_seconds: 10

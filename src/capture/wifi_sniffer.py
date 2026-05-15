@@ -60,6 +60,12 @@ def ensure_monitor_mode(interface: str, enable: bool = True) -> bool:
     return check_monitor_mode(interface)
 
 
+def set_channel(interface: str, channel: int) -> bool:
+    if channel <= 0:
+        return False
+    return _run_cmd(["iw", "dev", interface, "set", "channel", str(channel)])
+
+
 def capture_test(
     interface: str,
     seconds: float = 3.0,

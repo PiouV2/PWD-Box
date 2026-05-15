@@ -115,6 +115,20 @@ def _get_section(data: Dict[str, Any], key: str) -> Dict[str, Any]:
     return section if isinstance(section, dict) else {}
 
 
+def _parse_channels(raw: Any) -> Optional[List[int]]:
+    if not isinstance(raw, list):
+        return None
+    channels: List[int] = []
+    for entry in raw:
+        try:
+            channel = int(entry)
+        except (TypeError, ValueError):
+            continue
+        if channel > 0:
+            channels.append(channel)
+    return channels or None
+
+
 def load_config(path: Optional[str] = None) -> Config:
     config_path = Path(path) if path else _default_config_path()
     data: Dict[str, Any] = {}
