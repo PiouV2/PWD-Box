@@ -9,6 +9,7 @@ from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import ScreenManager
 
+from ..battery import BatteryMonitor
 from ..config import Config, load_config
 from ..storage.db import get_setting, init_db, set_setting
 from ..utils.logging import setup_logging
@@ -37,6 +38,7 @@ class PWDBoxApp(App):
         self.theme_mode = "dark"
         self.theme = resolve_theme(self.theme_mode)
         self.interface_choice = self.app_config.capture.interface or "wlan1"
+        self.battery_monitor = BatteryMonitor()
 
         self.screen_manager: Optional[ScreenManager] = None
         self.header_bar: Optional[HeaderBar] = None
@@ -130,11 +132,13 @@ class PWDBoxApp(App):
 
         self.footer_nav = FooterNav(self.theme, self.screen_manager)
         root.add_widget(self.footer_nav)
+        self.refresh_battery_status(0)
         return root
 
     def on_start(self) -> None:
         Clock.schedule_interval(self.process_queue, 0.25)
         Clock.schedule_interval(self.refresh_history, 5.0)
+        Clock.schedule_interval(self.refresh_battery_status, 10.0)
         if self.networks:
             self.networks.update_status(self.state.status, self.state.running, self.state.last_error)
         if self.demo:
@@ -210,6 +214,11 @@ class PWDBoxApp(App):
             self.networks.update_status(self.state.status, self.state.running, self.state.last_error)
         if updated_alerts and self.alerts:
             self.alerts.update_alerts(self.state.alerts)
+
+    def refresh_battery_status(self, _dt) -> None:
+        if not self.header_bar:
+            return
+        self.header_bar.update_battery(self.battery_monitor.read_snapshot())
 
     def _update_dashboard(self) -> None:
         if not self.dashboard or not self.header_bar:

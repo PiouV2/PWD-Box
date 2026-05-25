@@ -7,7 +7,9 @@ from kivy.properties import ListProperty, StringProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
+from kivy.uix.widget import Widget
 
+from ..battery import BatterySnapshot, format_battery_status
 from .theme import Theme
 
 
@@ -99,6 +101,55 @@ class StatusChip(BoxLayout):
         self._color.rgba = color
 
 
+class BatteryStatusChip(BoxLayout):
+    text = StringProperty("")
+    tone = StringProperty("neutral")
+
+    def __init__(self, theme: Theme, **kwargs) -> None:
+        super().__init__(orientation="horizontal", size_hint_y=None, height=theme.dp(24), **kwargs)
+        self.theme = theme
+        self.background_color = list(theme.palette.surface_alt)
+        with self.canvas.before:
+            self._color = Color(*self.background_color)
+            self._rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[theme.radius_small] * 4)
+        self.bind(pos=self._sync_rect, size=self._sync_rect)
+
+        self.label = Label(
+            text=self.text,
+            color=theme.palette.text,
+            font_size=theme.caption,
+            halign="right",
+            valign="middle",
+            shorten=True,
+            shorten_from="right",
+        )
+        self.label.bind(size=lambda *_: setattr(self.label, "text_size", self.label.size))
+        self.add_widget(self.label)
+        self.bind(text=self._update_text)
+        self.bind(tone=self._update_tone)
+
+    def _sync_rect(self, *_args) -> None:
+        self._rect.pos = self.pos
+        self._rect.size = self.size
+
+    def _update_text(self, *_args) -> None:
+        self.label.text = self.text
+
+    def _update_tone(self, *_args) -> None:
+        palette = self.theme.palette
+        if self.tone == "ok":
+            color = palette.accent_alt
+        elif self.tone == "warn":
+            color = palette.warning
+        else:
+            color = palette.surface_alt
+        self._color.rgba = color
+
+    def set_snapshot(self, snapshot: BatterySnapshot) -> None:
+        self.text = format_battery_status(snapshot)
+        self.tone = snapshot.tone
+
+
 class AlertBanner(Card):
     def __init__(self, theme: Theme, **kwargs) -> None:
         super().__init__(theme, **kwargs)
@@ -140,17 +191,33 @@ class HeaderBar(BoxLayout):
             self._rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[0, 0, 0, 0])
         self.bind(pos=self._sync_rect, size=self._sync_rect)
 
-        self.title_label = Label(text=title, color=theme.palette.text, font_size=theme.h2, size_hint_x=0.45, halign="left")
+        self.title_label = Label(text=title, color=theme.palette.text, font_size=theme.h2, size_hint_x=0.3, halign="left")
         self.title_label.bind(size=lambda *_: setattr(self.title_label, "text_size", self.title_label.size))
+        self.spacer = Widget(size_hint_x=0.2)
+        self.message_label = Label(
+            text="",
+            color=theme.palette.warning,
+            font_size=theme.caption,
+            size_hint_x=0.12,
+            halign="right",
+            valign="middle",
+            shorten=True,
+            shorten_from="right",
+        )
+        self.message_label.bind(size=lambda *_: setattr(self.message_label, "text_size", self.message_label.size))
         self.status_chip = StatusChip(theme)
+        self.status_chip.size_hint_x = 0.12
         self.status_chip.text = "STOPPED"
         self.status_chip.tone = "neutral"
-        self.message_label = Label(text="", color=theme.palette.warning, font_size=theme.caption, halign="right")
-        self.message_label.bind(size=lambda *_: setattr(self.message_label, "text_size", self.message_label.size))
+        self.battery_chip = BatteryStatusChip(theme)
+        self.battery_chip.size_hint_x = 0.26
+        self.battery_chip.set_snapshot(BatterySnapshot.unavailable())
 
         self.add_widget(self.title_label)
+        self.add_widget(self.spacer)
         self.add_widget(self.status_chip)
         self.add_widget(self.message_label)
+        self.add_widget(self.battery_chip)
 
     def _sync_rect(self, *_args) -> None:
         self._rect.pos = self.pos
@@ -159,6 +226,9 @@ class HeaderBar(BoxLayout):
     def update_status(self, text: str, tone: str) -> None:
         self.status_chip.text = text
         self.status_chip.tone = tone
+
+    def update_battery(self, snapshot: BatterySnapshot) -> None:
+        self.battery_chip.set_snapshot(snapshot)
 
     def set_message(self, message: Optional[str]) -> None:
         self.message_label.text = message or ""
