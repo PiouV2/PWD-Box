@@ -5,6 +5,7 @@ from typing import Optional
 from kivy.graphics import Color, RoundedRectangle
 from kivy.properties import ListProperty, StringProperty
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
@@ -61,6 +62,43 @@ class SecondaryButton(Button):
         self.background_color = theme.palette.surface_alt
         self.color = theme.palette.text
         self.font_size = theme.h3
+
+
+class BigNavButton(ButtonBehavior, BoxLayout):
+    """Large, touch-friendly navigation row for the Settings hub."""
+
+    title = StringProperty("")
+    subtitle = StringProperty("")
+
+    def __init__(self, theme: Theme, **kwargs) -> None:
+        super().__init__(orientation="vertical", size_hint_y=None, height=theme.dp(110), **kwargs)
+        self.theme = theme
+        self.padding = [theme.gap_m, theme.gap_s, theme.gap_m, theme.gap_s]
+        self.spacing = theme.gap_xs
+        self.background_color = list(theme.palette.surface_alt)
+        with self.canvas.before:
+            self._color = Color(*self.background_color)
+            self._rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[theme.radius] * 4)
+        self.bind(pos=self._sync_rect, size=self._sync_rect)
+
+        self.title_label = Label(text=self.title, color=theme.palette.text, font_size=theme.h2, halign="left")
+        self.subtitle_label = Label(text=self.subtitle, color=theme.palette.text_dim, font_size=theme.body, halign="left")
+        self.title_label.bind(size=lambda *_: setattr(self.title_label, "text_size", self.title_label.size))
+        self.subtitle_label.bind(size=lambda *_: setattr(self.subtitle_label, "text_size", self.subtitle_label.size))
+        self.add_widget(self.title_label)
+        self.add_widget(self.subtitle_label)
+        self.bind(title=self._update_title)
+        self.bind(subtitle=self._update_subtitle)
+
+    def _sync_rect(self, *_args) -> None:
+        self._rect.pos = self.pos
+        self._rect.size = self.size
+
+    def _update_title(self, *_args) -> None:
+        self.title_label.text = self.title
+
+    def _update_subtitle(self, *_args) -> None:
+        self.subtitle_label.text = self.subtitle
 
 
 class StatusChip(BoxLayout):

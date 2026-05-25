@@ -89,7 +89,7 @@ class DashboardScreen(Screen):
             ("Alerts", "alerts"),
             ("Networks", "networks"),
             ("Settings", "settings"),
-            ("PCAP", "pcap_settings"),
+            ("Evidence", "settings_evidence"),
         ):
             button = SecondaryButton(theme, text=label)
             button.height = theme.button_height

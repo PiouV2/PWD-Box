@@ -20,8 +20,10 @@ from .screens.alerts import AlertsScreen
 from .screens.dashboard import DashboardScreen
 from .screens.diagnostics import DiagnosticsScreen
 from .screens.networks import NetworksScreen
-from .screens.pcap_settings import PcapSettingsScreen
 from .screens.settings import SettingsScreen
+from .screens.settings_evidence import SettingsEvidenceScreen
+from .screens.settings_network import SettingsNetworkScreen
+from .screens.settings_system import SettingsSystemScreen
 from .state import AppState
 from .theme import resolve_theme
 
@@ -47,7 +49,9 @@ class PWDBoxApp(App):
         self.networks: Optional[NetworksScreen] = None
         self.alerts: Optional[AlertsScreen] = None
         self.settings: Optional[SettingsScreen] = None
-        self.pcap_settings: Optional[PcapSettingsScreen] = None
+        self.settings_network: Optional[SettingsNetworkScreen] = None
+        self.settings_evidence: Optional[SettingsEvidenceScreen] = None
+        self.settings_system: Optional[SettingsSystemScreen] = None
         self.diagnostics: Optional[DiagnosticsScreen] = None
 
         self.load_settings()
@@ -96,6 +100,12 @@ class PWDBoxApp(App):
         self.load_settings()
         if self.settings:
             self.settings.refresh()
+        if self.settings_network:
+            self.settings_network.refresh()
+        if self.settings_evidence:
+            self.settings_evidence.refresh()
+        if self.settings_system:
+            self.settings_system.refresh()
         if self.header_bar:
             self.header_bar.set_message("Settings reloaded")
 
@@ -118,14 +128,18 @@ class PWDBoxApp(App):
         self.networks = NetworksScreen(self, self.theme)
         self.alerts = AlertsScreen(self, self.theme)
         self.settings = SettingsScreen(self, self.theme)
-        self.pcap_settings = PcapSettingsScreen(self, self.theme)
+        self.settings_network = SettingsNetworkScreen(self, self.theme)
+        self.settings_evidence = SettingsEvidenceScreen(self, self.theme)
+        self.settings_system = SettingsSystemScreen(self, self.theme)
         self.diagnostics = DiagnosticsScreen(self, self.theme)
 
         self.screen_manager.add_widget(self.dashboard)
         self.screen_manager.add_widget(self.networks)
         self.screen_manager.add_widget(self.alerts)
         self.screen_manager.add_widget(self.settings)
-        self.screen_manager.add_widget(self.pcap_settings)
+        self.screen_manager.add_widget(self.settings_network)
+        self.screen_manager.add_widget(self.settings_evidence)
+        self.screen_manager.add_widget(self.settings_system)
         self.screen_manager.add_widget(self.diagnostics)
 
         root.add_widget(self.screen_manager)
@@ -174,8 +188,12 @@ class PWDBoxApp(App):
             self.screen_manager.current = name
         if name == "settings" and self.settings:
             self.settings.refresh()
-        if name == "pcap_settings" and self.pcap_settings:
-            self.pcap_settings.refresh()
+        if name == "settings_network" and self.settings_network:
+            self.settings_network.refresh()
+        if name == "settings_evidence" and self.settings_evidence:
+            self.settings_evidence.refresh()
+        if name == "settings_system" and self.settings_system:
+            self.settings_system.refresh()
         if name == "alerts" and self.alerts:
             self.alerts.refresh_history()
 
