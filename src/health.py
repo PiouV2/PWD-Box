@@ -9,6 +9,7 @@ import sys
 from typing import List, Optional, Tuple
 
 from .config import Config
+from .battery import BatteryMonitor
 
 
 @dataclass
@@ -170,6 +171,20 @@ def run_health_check(
     results.extend(_check_packages())
     results.extend(_check_interfaces(config, interface))
     results.append(_check_permissions())
+    # Battery check: use INA219 (or demo driver) to sample battery voltage/current
+    try:
+        monitor = BatteryMonitor()
+        snap = monitor.read_snapshot()
+        if not snap.available:
+            results.append(CheckResult("Battery", False, snap.message, "Connect INA219 or set PWDBOX_BATTERY_DEMO=1 for demo output."))
+        else:
+            details = f"{snap.percentage}% (V={snap.voltage_v:.2f} V, I={snap.current_ma:+.1f} mA)"
+            # Consider battery ok if above 10% or currently charging
+            ok = (snap.percentage is not None and snap.percentage >= 10) or bool(snap.charging)
+            fix = None if ok else "Charge battery or check power supply."
+            results.append(CheckResult("Battery", ok, details, fix))
+    except Exception as exc:
+        results.append(CheckResult("Battery", False, f"error: {exc}", "Connect INA219 or set PWDBOX_BATTERY_DEMO=1 for demo output."))
     return results
 
 
