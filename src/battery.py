@@ -57,6 +57,14 @@ class BatteryMonitor:
         self.address = address
         self._driver = driver
 
+    class _DemoDriver:
+        """Simple demo driver that returns stable, plausible readings."""
+        def getBusVoltage_V(self) -> float:
+            return 11.7
+
+        def getCurrent_mA(self) -> float:
+            return -86.2
+
     def _create_driver(self):
         from .INA219 import INA219
 
@@ -64,7 +72,13 @@ class BatteryMonitor:
 
     def _get_driver(self):
         if self._driver is None:
-            self._driver = self._create_driver()
+            # Allow a demo/demo-driver mode via environment for systems without INA219
+            import os
+
+            if os.environ.get("PWDBOX_BATTERY_DEMO") == "1":
+                self._driver = self._DemoDriver()
+            else:
+                self._driver = self._create_driver()
         return self._driver
 
     def read_snapshot(self) -> BatterySnapshot:
