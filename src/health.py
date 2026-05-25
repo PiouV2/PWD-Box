@@ -9,7 +9,7 @@ import sys
 from typing import List, Optional, Tuple
 
 from .config import Config
-from .battery import BatteryMonitor
+from .battery_factory import build_battery_monitor
 
 
 @dataclass
@@ -173,7 +173,7 @@ def run_health_check(
     results.append(_check_permissions())
     # Battery check: use INA219 (or demo driver) to sample battery voltage/current
     try:
-        monitor = BatteryMonitor()
+        monitor = build_battery_monitor()
         snap = monitor.read_snapshot()
         if not snap.available:
             results.append(CheckResult("Battery", False, snap.message, "Connect INA219 or set PWDBOX_BATTERY_DEMO=1 for demo output."))

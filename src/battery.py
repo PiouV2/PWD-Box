@@ -54,8 +54,6 @@ def format_battery_status(snapshot: BatterySnapshot) -> str:
 
 
 class _DemoDriver:
-    """Return stable demo readings for non-hardware environments."""
-
     def getBusVoltage_V(self) -> float:
         return 11.7
 
@@ -64,73 +62,97 @@ class _DemoDriver:
 
 
 class _SysfsDriver:
-    """Read battery attributes from /sys/class/power_supply/<device>/.
-
-    This is a generic, best-effort reader and returns None when values
-    are not present or cannot be parsed.
-    """
-
     def __init__(self, base_path: str) -> None:
         self.base = Path(base_path)
 
-    def _read_int(self, name: str) -> Optional[int]:
-        p = self.base / name
+    def _read_text(self, name: str) -> Optional[str]:
         try:
-            txt = p.read_text().strip()
-            return int(txt)
+            return (self.base / name).read_text().strip()
         except Exception:
             return None
 
-    def getBusVoltage_V(self) -> Optional[float]:
-        v = self._read_int("voltage_now") or self._read_int("voltage")
-        if v is None:
+    def _read_int_loose(self, name: str) -> Optional[int]:
+        txt = self._read_text(name)
+        if not txt:
             return None
-        # voltage_now is typically in microvolts
-        return float(v) / 1_000_000.0
+        try:
+            return int(txt)
+        except ValueError:
+            import re
+
+            match = re.search(r"(-?\d+)", txt)
+            if not match:
+                return None
+            try:
+                return int(match.group(1))
+            except Exception:
+                return None
+
+    def _read_uevent_value(self, key: str) -> Optional[int]:
+        txt = self._read_text("uevent")
+        if not txt:
+            return None
+        for line in txt.splitlines():
+            if line.startswith(key + "="):
+                try:
+                    return int(line.split("=", 1)[1])
+                except Exception:
+                    return None
+        return None
+
+    def getBusVoltage_V(self) -> Optional[float]:
+        raw = self._read_int_loose("voltage_now")
+        if raw is None:
+            raw = self._read_int_loose("voltage")
+        if raw is None:
+            raw = self._read_uevent_value("POWER_SUPPLY_VOLTAGE_NOW")
+        if raw is None:
+            return None
+        if abs(raw) >= 1_000_000:
+            return float(raw) / 1_000_000.0
+        if abs(raw) >= 1000:
+            return float(raw) / 1000.0
+        return float(raw)
 
     def getCurrent_mA(self) -> Optional[float]:
-        cur = self._read_int("current_now")
-        if cur is not None:
-            # current_now often in microamps
-            return float(cur) / 1000.0
-        # fallback: derive from power_now (microwatts) / voltage
-        power = self._read_int("power_now")
-        v = self.getBusVoltage_V()
-        if power is not None and v:
-            power_w = float(power) / 1_000_000.0
-            current_a = power_w / v if v != 0 else None
+        raw = self._read_int_loose("current_now")
+        if raw is None:
+            raw = self._read_int_loose("current")
+        if raw is None:
+            raw = self._read_uevent_value("POWER_SUPPLY_CURRENT_NOW")
+        if raw is None:
+            power = self._read_int_loose("power_now") or self._read_uevent_value("POWER_SUPPLY_POWER_NOW")
+            voltage_v = self.getBusVoltage_V()
+            if power is None or not voltage_v:
+                return None
+            power_w = float(power) / 1_000_000.0 if abs(power) >= 1_000_000 else float(power) / 1000.0
+            current_a = power_w / voltage_v if voltage_v != 0 else None
             return current_a * 1000.0 if current_a is not None else None
-        return None
+        if abs(raw) >= 1000:
+            return float(raw) / 1000.0
+        return float(raw)
 
 
 def _find_sysfs_battery() -> Optional[str]:
     base = Path("/sys/class/power_supply")
     if not base.exists():
         return None
-    # Prefer devices whose 'type' file contains 'Battery'
     for dev in base.iterdir():
         tfile = dev / "type"
         try:
-            t = tfile.read_text().strip().lower()
+            battery_type = tfile.read_text().strip().lower()
         except Exception:
-            t = ""
-        if "battery" in t:
+            battery_type = ""
+        if "battery" in battery_type:
             return str(dev)
-    # fallback: any device exposing common battery attributes
     for dev in base.iterdir():
-        for fn in ("voltage_now", "current_now", "power_now", "voltage"):
-            if (dev / fn).exists():
+        for name in ("voltage_now", "current_now", "power_now", "voltage"):
+            if (dev / name).exists():
                 return str(dev)
     return None
 
 
 class BatteryMonitor:
-    """High-level monitor that picks a provider:
-    - demo mode when PWDBOX_BATTERY_DEMO=1
-    - sysfs when available
-    - returns unavailable otherwise
-    """
-
     def __init__(self, driver: Optional[object] = None) -> None:
         self._driver = driver
 
@@ -140,9 +162,9 @@ class BatteryMonitor:
         if os.environ.get("PWDBOX_BATTERY_DEMO") == "1":
             self._driver = _DemoDriver()
             return self._driver
-        path = _find_sysfs_battery()
-        if path:
-            self._driver = _SysfsDriver(path)
+        sysfs_path = _find_sysfs_battery()
+        if sysfs_path:
+            self._driver = _SysfsDriver(sysfs_path)
             return self._driver
         return None
 
@@ -150,19 +172,17 @@ class BatteryMonitor:
         driver = self._get_driver()
         if driver is None:
             return BatterySnapshot.unavailable()
+
         try:
-            voltage = driver.getBusVoltage_V()
-            current = driver.getCurrent_mA()
+            voltage_v = float(driver.getBusVoltage_V())
+            current_ma = float(driver.getCurrent_mA())
         except Exception:
             return BatterySnapshot.unavailable()
-        if voltage is None:
-            return BatterySnapshot.unavailable()
-        percentage = estimate_battery_percentage(voltage)
-        charging = bool(current and current > 0)
+
         return BatterySnapshot(
             available=True,
-            percentage=percentage,
-            voltage_v=voltage,
-            current_ma=current,
-            charging=charging,
+            percentage=estimate_battery_percentage(voltage_v),
+            voltage_v=voltage_v,
+            current_ma=current_ma,
+            charging=current_ma > 0,
         )

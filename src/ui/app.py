@@ -9,10 +9,10 @@ from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import ScreenManager
 
-from ..battery import BatteryMonitor
 from ..config import Config, load_config
 from ..storage.db import get_setting, init_db, set_setting
 from ..utils.logging import setup_logging
+from ..battery_factory import build_battery_monitor
 from .components import FooterNav, HeaderBar
 from .controller import MonitorController
 from .data import demo_alerts, demo_networks
@@ -38,7 +38,7 @@ class PWDBoxApp(App):
         self.theme_mode = "dark"
         self.theme = resolve_theme(self.theme_mode)
         self.interface_choice = self.app_config.capture.interface or "wlan1"
-        self.battery_monitor = BatteryMonitor()
+        self.battery_monitor = build_battery_monitor(demo=self.demo)
 
         self.screen_manager: Optional[ScreenManager] = None
         self.header_bar: Optional[HeaderBar] = None
