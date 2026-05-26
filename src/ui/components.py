@@ -65,13 +65,13 @@ class SecondaryButton(Button):
 
 
 class BigNavButton(ButtonBehavior, BoxLayout):
-    """Large, touch-friendly navigation row for the Settings hub."""
+    """Compact navigation row for the Settings hub."""
 
     title = StringProperty("")
     subtitle = StringProperty("")
 
     def __init__(self, theme: Theme, **kwargs) -> None:
-        super().__init__(orientation="vertical", size_hint_y=None, height=theme.dp(110), **kwargs)
+        super().__init__(orientation="vertical", size_hint_y=None, height=theme.dp(76), **kwargs)
         self.theme = theme
         self.padding = [theme.gap_m, theme.gap_s, theme.gap_m, theme.gap_s]
         self.spacing = theme.gap_xs
@@ -81,8 +81,22 @@ class BigNavButton(ButtonBehavior, BoxLayout):
             self._rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[theme.radius] * 4)
         self.bind(pos=self._sync_rect, size=self._sync_rect)
 
-        self.title_label = Label(text=self.title, color=theme.palette.text, font_size=theme.h2, halign="left")
-        self.subtitle_label = Label(text=self.subtitle, color=theme.palette.text_dim, font_size=theme.body, halign="left")
+        self.title_label = Label(
+            text=self.title,
+            color=theme.palette.text,
+            font_size=theme.h3,
+            halign="left",
+            size_hint_y=None,
+            height=theme.dp(24),
+        )
+        self.subtitle_label = Label(
+            text=self.subtitle,
+            color=theme.palette.text_dim,
+            font_size=theme.caption,
+            halign="left",
+            size_hint_y=None,
+            height=theme.dp(18),
+        )
         self.title_label.bind(size=lambda *_: setattr(self.title_label, "text_size", self.title_label.size))
         self.subtitle_label.bind(size=lambda *_: setattr(self.subtitle_label, "text_size", self.subtitle_label.size))
         self.add_widget(self.title_label)

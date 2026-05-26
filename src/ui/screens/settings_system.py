@@ -23,7 +23,14 @@ class SettingsSystemScreen(Screen):
         )
         root.add_widget(self._header("System"))
 
-        tools_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
+        tools_card = Card(
+            theme,
+            orientation="vertical",
+            padding=theme.gap_m,
+            spacing=theme.gap_s,
+            size_hint_y=None,
+        )
+        tools_card.bind(minimum_height=tools_card.setter("height"))
         tools_card.add_widget(self._section_label("Display & Tools"))
         tools_card.add_widget(self._body_label("Theme and diagnostics controls."))
 
@@ -41,7 +48,14 @@ class SettingsSystemScreen(Screen):
         tools_card.add_widget(self.health_button)
         root.add_widget(tools_card)
 
-        paths_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
+        paths_card = Card(
+            theme,
+            orientation="vertical",
+            padding=theme.gap_m,
+            spacing=theme.gap_s,
+            size_hint_y=None,
+        )
+        paths_card.bind(minimum_height=paths_card.setter("height"))
         paths_card.add_widget(self._section_label("Paths"))
         paths_card.add_widget(self._field("Database path", self._value_label(self.app.db_path)))
         paths_card.add_widget(self._field("Logging level", self._value_label(self.app.app_config.logging.level)))
@@ -59,7 +73,7 @@ class SettingsSystemScreen(Screen):
         self.add_widget(root)
 
     def _header(self, title: str) -> BoxLayout:
-        row = BoxLayout(orientation="horizontal", size_hint_y=None, height=self.theme.button_height, spacing=self.theme.gap_s)
+        row = BoxLayout(orientation="horizontal", size_hint_y=None, height=self.theme.nav_height, spacing=self.theme.gap_s)
         back = SecondaryButton(self.theme, text="Back")
         back.size_hint_x = 0.2
         back.bind(on_press=lambda *_: self.app.show_screen("settings"))
@@ -70,7 +84,7 @@ class SettingsSystemScreen(Screen):
         return row
 
     def _section_label(self, text: str) -> Label:
-        return Label(text=text, color=self.theme.palette.text, font_size=self.theme.h3, size_hint_y=None, height=self.theme.dp(22))
+        return Label(text=text, color=self.theme.palette.text, font_size=self.theme.h3, size_hint_y=None, height=self.theme.dp(20))
 
     def _body_label(self, text: str) -> Label:
         label = Label(
@@ -78,7 +92,7 @@ class SettingsSystemScreen(Screen):
             color=self.theme.palette.text_dim,
             font_size=self.theme.body,
             size_hint_y=None,
-            height=self.theme.dp(40),
+            height=self.theme.dp(34),
             halign="left",
             valign="middle",
         )
@@ -86,7 +100,7 @@ class SettingsSystemScreen(Screen):
         return label
 
     def _field(self, label_text: str, widget) -> BoxLayout:
-        layout = BoxLayout(orientation="vertical", size_hint_y=None, height=self.theme.dp(76), spacing=self.theme.gap_xs)
+        layout = BoxLayout(orientation="vertical", size_hint_y=None, height=self.theme.dp(64), spacing=self.theme.gap_xs)
         label = Label(
             text=label_text,
             color=self.theme.palette.text_dim,

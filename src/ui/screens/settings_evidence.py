@@ -28,7 +28,14 @@ class SettingsEvidenceScreen(Screen):
         content = BoxLayout(orientation="vertical", spacing=theme.gap_m, size_hint_y=None)
         content.bind(minimum_height=content.setter("height"))
 
-        evidence_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
+        evidence_card = Card(
+            theme,
+            orientation="vertical",
+            padding=theme.gap_m,
+            spacing=theme.gap_s,
+            size_hint_y=None,
+        )
+        evidence_card.bind(minimum_height=evidence_card.setter("height"))
         evidence_card.add_widget(self._section_label("Capture"))
         evidence_card.add_widget(self._body_label("Tune alert PCAP capture and retention limits."))
 
@@ -84,7 +91,7 @@ class SettingsEvidenceScreen(Screen):
         self.add_widget(root)
 
     def _header(self, title: str) -> BoxLayout:
-        row = BoxLayout(orientation="horizontal", size_hint_y=None, height=self.theme.button_height, spacing=self.theme.gap_s)
+        row = BoxLayout(orientation="horizontal", size_hint_y=None, height=self.theme.nav_height, spacing=self.theme.gap_s)
         back = SecondaryButton(self.theme, text="Back")
         back.size_hint_x = 0.2
         back.bind(on_press=lambda *_: self.app.show_screen("settings"))
@@ -95,7 +102,7 @@ class SettingsEvidenceScreen(Screen):
         return row
 
     def _section_label(self, text: str) -> Label:
-        label = Label(text=text, color=self.theme.palette.text, font_size=self.theme.h3, size_hint_y=None, height=self.theme.dp(22))
+        label = Label(text=text, color=self.theme.palette.text, font_size=self.theme.h3, size_hint_y=None, height=self.theme.dp(20))
         return label
 
     def _body_label(self, text: str) -> Label:
@@ -104,7 +111,7 @@ class SettingsEvidenceScreen(Screen):
             color=self.theme.palette.text_dim,
             font_size=self.theme.body,
             size_hint_y=None,
-            height=self.theme.dp(40),
+            height=self.theme.dp(34),
             halign="left",
             valign="middle",
         )
@@ -112,7 +119,7 @@ class SettingsEvidenceScreen(Screen):
         return label
 
     def _field(self, label_text: str, widget) -> BoxLayout:
-        layout = BoxLayout(orientation="vertical", size_hint_y=None, height=self.theme.dp(76), spacing=self.theme.gap_xs)
+        layout = BoxLayout(orientation="vertical", size_hint_y=None, height=self.theme.dp(64), spacing=self.theme.gap_xs)
         label = Label(
             text=label_text,
             color=self.theme.palette.text_dim,
