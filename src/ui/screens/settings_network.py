@@ -10,6 +10,7 @@ from kivy.uix.togglebutton import ToggleButton
 
 from ..components import Card, PrimaryButton, SecondaryButton
 from ..theme import Theme
+from ...health import list_wireless_interfaces
 
 
 class SettingsNetworkScreen(Screen):
@@ -127,10 +128,12 @@ class SettingsNetworkScreen(Screen):
 
     def _interface_values(self) -> List[str]:
         values = []
-        for name in (self.app.interface_choice, "wlan0", "wlan1"):
+        for name in list_wireless_interfaces():
             if name and name not in values:
                 values.append(name)
-        return values
+        if self.app.interface_choice and self.app.interface_choice not in values:
+            values.append(self.app.interface_choice)
+        return values or ["wlan1"]
 
     def _toggle_monitor(self, _instance) -> None:
         enabled = self.monitor_toggle.state == "down"

@@ -13,6 +13,7 @@ from ..config import Config, load_config
 from ..storage.db import get_setting, init_db, set_setting
 from ..utils.logging import setup_logging
 from ..battery_factory import build_battery_monitor
+from ..health import list_wireless_interfaces
 from .components import FooterNav, HeaderBar
 from .controller import MonitorController
 from .data import demo_alerts, demo_networks
@@ -65,6 +66,9 @@ class PWDBoxApp(App):
                 db_path=self.db_path,
             )
         )
+        available = list_wireless_interfaces()
+        if available and self.interface_choice not in available:
+            self.interface_choice = available[0]
         self.app_config.capture.interface = self.interface_choice
         self.app_config.capture.enable_monitor = bool(
             get_setting("enable_monitor", self.app_config.capture.enable_monitor, db_path=self.db_path)
