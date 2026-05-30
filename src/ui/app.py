@@ -125,16 +125,25 @@ class PWDBoxApp(App):
         set_setting("setup_complete", True, db_path=self.db_path)
 
     def set_theme(self, mode: str) -> None:
+        previous_screen = None
+        if self.screen_manager:
+            previous_screen = self.screen_manager.current
         self.theme_mode = mode
         set_setting("theme_mode", mode, db_path=self.db_path)
-        if self.header_bar:
-            self.header_bar.set_message("Theme saved. Restart UI to apply.")
-
-    def build(self):
         self.theme = resolve_theme(self.theme_mode)
         Window.clearcolor = self.theme.palette.background
-        root = BoxLayout(orientation="vertical")
 
+        # Recompose the UI so theme changes are visible immediately.
+        if self.root:
+            self.root.clear_widgets()
+            self._compose_root(self.root)
+            if previous_screen and self.screen_manager:
+                self.screen_manager.current = previous_screen
+
+        if self.header_bar:
+            self.header_bar.set_message("Theme updated")
+
+    def _compose_root(self, root: BoxLayout) -> None:
         self.header_bar = HeaderBar(self.theme, title="PWD-Box")
         root.add_widget(self.header_bar)
 
@@ -164,6 +173,12 @@ class PWDBoxApp(App):
         self.footer_nav = FooterNav(self.theme, self.screen_manager)
         root.add_widget(self.footer_nav)
         self.refresh_battery_status(0)
+
+    def build(self):
+        self.theme = resolve_theme(self.theme_mode)
+        Window.clearcolor = self.theme.palette.background
+        root = BoxLayout(orientation="vertical")
+        self._compose_root(root)
         return root
 
     def on_start(self) -> None:
