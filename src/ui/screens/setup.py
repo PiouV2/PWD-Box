@@ -3,6 +3,7 @@ from __future__ import annotations
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
+from kivy.uix.scrollview import ScrollView
 
 from ..components import Card, PrimaryButton, SecondaryButton
 from ..theme import Theme
@@ -20,6 +21,10 @@ class SetupScreen(Screen):
             spacing=theme.gap_m,
         )
         root.add_widget(self._header("Getting Started"))
+
+        scroll = ScrollView(do_scroll_x=False)
+        content = BoxLayout(orientation="vertical", spacing=theme.gap_m, size_hint_y=None)
+        content.bind(minimum_height=content.setter("height"))
 
         guide_card = Card(
             theme,
@@ -71,7 +76,7 @@ class SetupScreen(Screen):
                 "On Linux, monitoring still needs admin permissions (sudo or capabilities)."
             )
         )
-        root.add_widget(guide_card)
+        content.add_widget(guide_card)
 
         actions = BoxLayout(
             orientation="horizontal",
@@ -85,7 +90,7 @@ class SetupScreen(Screen):
         skip_button.bind(on_press=lambda *_: self._finish_setup())
         actions.add_widget(finish_button)
         actions.add_widget(skip_button)
-        root.add_widget(actions)
+        content.add_widget(actions)
 
         hint = Label(
             text="You can reopen this guide from Settings.",
@@ -94,7 +99,10 @@ class SetupScreen(Screen):
             size_hint_y=None,
             height=self.theme.dp(18),
         )
-        root.add_widget(hint)
+        content.add_widget(hint)
+
+        scroll.add_widget(content)
+        root.add_widget(scroll)
 
         self.add_widget(root)
 

@@ -5,6 +5,7 @@ from typing import List
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.spinner import Spinner
 from kivy.uix.togglebutton import ToggleButton
 
@@ -26,6 +27,10 @@ class SettingsNetworkScreen(Screen):
             spacing=theme.gap_m,
         )
         root.add_widget(self._header("Wireless setup"))
+
+        scroll = ScrollView(do_scroll_x=False)
+        content = BoxLayout(orientation="vertical", spacing=theme.gap_m, size_hint_y=None)
+        content.bind(minimum_height=content.setter("height"))
 
         card = Card(
             theme,
@@ -57,7 +62,7 @@ class SettingsNetworkScreen(Screen):
         card.add_widget(self.monitor_toggle)
         card.add_widget(self._body_label("Listening mode lets this device hear Wi-Fi management frames."))
         card.add_widget(self._body_label("On Linux you still need admin permissions (sudo or capabilities)."))
-        root.add_widget(card)
+        content.add_widget(card)
 
         actions = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.button_height, spacing=theme.gap_s)
         save_button = PrimaryButton(theme, text="Save")
@@ -66,7 +71,10 @@ class SettingsNetworkScreen(Screen):
         reset_button.bind(on_press=lambda *_: self._reset())
         actions.add_widget(save_button)
         actions.add_widget(reset_button)
-        root.add_widget(actions)
+        content.add_widget(actions)
+
+        scroll.add_widget(content)
+        root.add_widget(scroll)
 
         self.add_widget(root)
 

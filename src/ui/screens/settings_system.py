@@ -3,6 +3,7 @@ from __future__ import annotations
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.togglebutton import ToggleButton
 
 from ..components import Card, PrimaryButton, SecondaryButton
@@ -22,6 +23,10 @@ class SettingsSystemScreen(Screen):
             spacing=theme.gap_m,
         )
         root.add_widget(self._header("Device"))
+
+        scroll = ScrollView(do_scroll_x=False)
+        content = BoxLayout(orientation="vertical", spacing=theme.gap_m, size_hint_y=None)
+        content.bind(minimum_height=content.setter("height"))
 
         tools_card = Card(
             theme,
@@ -46,7 +51,7 @@ class SettingsSystemScreen(Screen):
         self.health_button.height = theme.button_height
         self.health_button.bind(on_press=lambda *_: self.app.show_screen("diagnostics"))
         tools_card.add_widget(self.health_button)
-        root.add_widget(tools_card)
+        content.add_widget(tools_card)
 
         paths_card = Card(
             theme,
@@ -59,7 +64,7 @@ class SettingsSystemScreen(Screen):
         paths_card.add_widget(self._section_label("Storage"))
         paths_card.add_widget(self._field("Database file", self._value_label(self.app.db_path)))
         paths_card.add_widget(self._field("Logging level (advanced)", self._value_label(self.app.app_config.logging.level)))
-        root.add_widget(paths_card)
+        content.add_widget(paths_card)
 
         actions = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.button_height, spacing=theme.gap_s)
         save_button = PrimaryButton(theme, text="Save")
@@ -68,7 +73,10 @@ class SettingsSystemScreen(Screen):
         reset_button.bind(on_press=lambda *_: self._reset())
         actions.add_widget(save_button)
         actions.add_widget(reset_button)
-        root.add_widget(actions)
+        content.add_widget(actions)
+
+        scroll.add_widget(content)
+        root.add_widget(scroll)
 
         self.add_widget(root)
 

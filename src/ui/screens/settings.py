@@ -4,6 +4,7 @@ from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
+from kivy.uix.scrollview import ScrollView
 
 from ..components import BigNavButton, Card, SecondaryButton
 from ..theme import Theme
@@ -30,6 +31,10 @@ class SettingsScreen(Screen):
         header_row.add_widget(back)
         header_row.add_widget(title)
         root.add_widget(header_row)
+
+        scroll = ScrollView(do_scroll_x=False)
+        content = BoxLayout(orientation="vertical", spacing=theme.gap_m, size_hint_y=None)
+        content.bind(minimum_height=content.setter("height"))
 
         center = AnchorLayout(anchor_x="center", anchor_y="center")
         hub_card = Card(
@@ -73,7 +78,7 @@ class SettingsScreen(Screen):
         hub_card.add_widget(self.evidence_button)
         hub_card.add_widget(self.system_button)
         center.add_widget(hub_card)
-        root.add_widget(center)
+        content.add_widget(center)
 
         hint = Label(
             text="Tap a section to adjust settings.",
@@ -82,7 +87,10 @@ class SettingsScreen(Screen):
             size_hint_y=None,
             height=theme.dp(18),
         )
-        root.add_widget(hint)
+        content.add_widget(hint)
+
+        scroll.add_widget(content)
+        root.add_widget(scroll)
 
         self.add_widget(root)
 
