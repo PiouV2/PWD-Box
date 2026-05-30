@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
@@ -36,15 +35,14 @@ class SettingsScreen(Screen):
         content = BoxLayout(orientation="vertical", spacing=theme.gap_m, size_hint_y=None)
         content.bind(minimum_height=content.setter("height"))
 
-        center = AnchorLayout(anchor_x="center", anchor_y="center")
         hub_card = Card(
             theme,
             orientation="vertical",
             padding=theme.gap_m,
             spacing=theme.gap_s,
-            size_hint=(None, None),
-            width=theme.dp(620),
+            size_hint=(1, None),
         )
+        hub_card.width = theme.dp(620)
         hub_card.bind(minimum_height=hub_card.setter("height"))
 
         # Settings hub: compact, touch-friendly navigation buttons.
@@ -77,8 +75,7 @@ class SettingsScreen(Screen):
         hub_card.add_widget(self.network_button)
         hub_card.add_widget(self.evidence_button)
         hub_card.add_widget(self.system_button)
-        center.add_widget(hub_card)
-        content.add_widget(center)
+        content.add_widget(hub_card)
 
         hint = Label(
             text="Tap a section to adjust settings.",
