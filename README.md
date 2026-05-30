@@ -39,6 +39,11 @@ Start passive monitoring:
 sudo env PYTHONPATH=. .venv/bin/python -m src.main monitor --interface wlan1
 ```
 
+Force monitor mode (helper script):
+```bash
+sudo env PYTHONPATH=. .venv/bin/python scripts/set_monitor_mode.py --interface wlan1
+```
+
 Start the touchscreen UI:
 ```bash
 sudo env PYTHONPATH=. .venv/bin/python -m src.ui

@@ -10,6 +10,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import ScreenManager
 
 from ..config import Config, load_config
+from ..capture.wifi_sniffer import ensure_monitor_mode
 from ..storage.db import get_setting, init_db, set_setting
 from ..utils.logging import setup_logging
 from ..battery_factory import build_battery_monitor
@@ -194,12 +195,39 @@ class PWDBoxApp(App):
 
     def start_monitoring(self) -> None:
         self.header_bar.set_message(None)
+        interface = (self.interface_choice or "wlan1").strip() or "wlan1"
+        self.interface_choice = interface
+        self.app_config.capture.interface = interface
+
+        if self.app_config.capture.enable_monitor:
+            monitor_ready = ensure_monitor_mode(interface, enable=True)
+            if not monitor_ready:
+                message = (
+                    f"Could not enable monitor mode on {interface}. "
+                    "Use sudo or grant CAP_NET_ADMIN/CAP_NET_RAW."
+                )
+                self.state.status = {
+                    "adapter_ok": False,
+                    "monitor_mode": False,
+                    "logging_on": False,
+                    "running": False,
+                    "interface": interface,
+                    "message": message,
+                }
+                self.state.last_error = message
+                if self.header_bar:
+                    self.header_bar.set_message(message)
+                if self.networks:
+                    self.networks.update_status(self.state.status, False, message)
+                self._update_dashboard()
+                return
+
         self.state.status = {
             "adapter_ok": False,
             "monitor_mode": False,
             "logging_on": False,
             "running": False,
-            "interface": self.interface_choice,
+            "interface": interface,
             "message": None,
         }
         self.state.networks = []
@@ -210,7 +238,7 @@ class PWDBoxApp(App):
         if self.networks:
             self.networks.update_networks(self.state.networks)
             self.networks.update_status(self.state.status, self.state.running, self.state.last_error)
-        self.controller.start(interface=self.interface_choice)
+        self.controller.start(interface=interface)
 
     def stop_monitoring(self) -> None:
         self.controller.stop()
