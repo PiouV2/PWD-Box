@@ -95,6 +95,14 @@ class AlertRow(RecycleDataViewBehavior, BoxLayout):
             f"Key: {details.get('key')}",
             f"Count: {details.get('count')}",
         ]
+        if details.get("src"):
+            message.append(f"Source: {details.get('src')}")
+        if details.get("dst"):
+            message.append(f"Target: {details.get('dst')}")
+        if details.get("bssid"):
+            message.append(f"BSSID: {details.get('bssid')}")
+        if details.get("reason_code") is not None:
+            message.append(f"Reason: {details.get('reason_code')}")
         if details.get("pcap_path"):
             message.append(f"PCAP: {details.get('pcap_path')}")
         content = Label(text="\n".join(message), color=self.theme.palette.text)
@@ -178,7 +186,8 @@ class AlertsScreen(Screen):
 
         live_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
         live_card.size_hint_x = 0.5
-        live_card.add_widget(Label(text="Alerts (Live)", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24)))
+        live_card.add_widget(Label(text="Live alerts", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24)))
+        live_card.add_widget(Label(text="Tap an alert for details.", color=theme.palette.text_dim, font_size=theme.caption, size_hint_y=None, height=theme.dp(18)))
         AlertRow.theme_ref = theme
         self.live_view = _build_recycler(AlertRow, theme)
         live_card.add_widget(self.live_view)
@@ -186,7 +195,8 @@ class AlertsScreen(Screen):
 
         history_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
         history_card.size_hint_x = 0.5
-        history_card.add_widget(Label(text="Alerts History", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24)))
+        history_card.add_widget(Label(text="Alert history", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24)))
+        history_card.add_widget(Label(text="Sessions stored on this device.", color=theme.palette.text_dim, font_size=theme.caption, size_hint_y=None, height=theme.dp(18)))
 
         history_card.add_widget(Label(text="Sessions", color=theme.palette.text_dim, font_size=theme.caption, size_hint_y=None, height=theme.dp(18)))
         SessionRow.theme_ref = theme
@@ -255,6 +265,10 @@ class AlertsScreen(Screen):
         for alert in alerts:
             details = alert.get("details")
             key = details.get("key") if isinstance(details, dict) else None
-            summary = f"{alert.get('timestamp')} {alert.get('alert_type')} key={key}"
+            count = details.get("count") if isinstance(details, dict) else None
+            pcap_path = alert.get("pcap_path")
+            pcap = Path(pcap_path).name if pcap_path else "-"
+            count_text = str(count) if count is not None else "-"
+            summary = f"{alert.get('timestamp')} {alert.get('alert_type')} key={key} count={count_text} pcap={pcap}"
             rows.append({"summary": summary})
         self.history_alerts_view.data = rows or [{"summary": "No alerts"}]

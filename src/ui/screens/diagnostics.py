@@ -48,11 +48,20 @@ class DiagnosticsScreen(Screen):
         )
 
         header = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.dp(28))
-        header.add_widget(Label(text="Health Checks", color=theme.palette.text, font_size=theme.h2, size_hint_x=0.7))
-        self.run_button = PrimaryButton(theme, text="Run Checks")
+        header.add_widget(Label(text="Device checks", color=theme.palette.text, font_size=theme.h2, size_hint_x=0.7))
+        self.run_button = PrimaryButton(theme, text="Run device checks")
         self.run_button.bind(on_press=lambda *_: self.run_checks())
         header.add_widget(self.run_button)
         root.add_widget(header)
+
+        hint = Label(
+            text="Checks permissions, Wi-Fi adapter, packages, and battery status.",
+            color=theme.palette.text_dim,
+            font_size=theme.caption,
+            size_hint_y=None,
+            height=theme.dp(18),
+        )
+        root.add_widget(hint)
 
         list_card = Card(theme, orientation="vertical", padding=theme.gap_s, spacing=theme.gap_s)
         self.results_view = RecycleView()
@@ -66,7 +75,7 @@ class DiagnosticsScreen(Screen):
         self.results_view.layout_manager = layout
         list_card.add_widget(self.results_view)
         root.add_widget(list_card)
-        self.results_view.data = [{"text": "Run checks to view status"}]
+        self.results_view.data = [{"text": "Run device checks to view status"}]
 
         self.details = TextInput(
             text="",
@@ -97,5 +106,5 @@ class DiagnosticsScreen(Screen):
     def _update(self, lines: List[str], details: str) -> None:
         self.results_view.data = [{"text": line} for line in lines]
         self.details.text = details
-        self.run_button.text = "Run Checks"
+        self.run_button.text = "Run device checks"
         self._busy = False

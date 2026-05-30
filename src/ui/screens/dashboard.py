@@ -40,22 +40,22 @@ class DashboardScreen(Screen):
         self.status_card.size_hint_y = None
         self.status_card.bind(minimum_height=self.status_card.setter("height"))
 
-        title = Label(text="System Status", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24))
+        title = Label(text="Device status", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24))
         self.status_card.add_widget(title)
 
         self.monitoring_chip = StatusChip(theme)
         self.monitoring_chip.text = "STOPPED"
         self.monitoring_chip.tone = "neutral"
-        self.status_card.add_widget(self._row("Monitoring", chip=self.monitoring_chip))
+        self.status_card.add_widget(self._row("Listening", chip=self.monitoring_chip))
 
         self.interface_label = Label(text="-", color=theme.palette.text, font_size=theme.body)
         self.status_card.add_widget(self._row("Interface", value_widget=self.interface_label))
 
         self.monitor_mode_label = Label(text="OFF", color=theme.palette.text, font_size=theme.body)
-        self.status_card.add_widget(self._row("Monitor mode", value_widget=self.monitor_mode_label))
+        self.status_card.add_widget(self._row("Listening mode", value_widget=self.monitor_mode_label))
 
         self.logging_label = Label(text="OFF", color=theme.palette.text, font_size=theme.body)
-        self.status_card.add_widget(self._row("Logging", value_widget=self.logging_label))
+        self.status_card.add_widget(self._row("Recording", value_widget=self.logging_label))
 
         self.last_alert_label = Label(text="-", color=theme.palette.text, font_size=theme.body)
         self.status_card.add_widget(self._row("Last alert", value_widget=self.last_alert_label))
@@ -69,13 +69,22 @@ class DashboardScreen(Screen):
         actions.size_hint_x = 0.48
         actions.size_hint_y = None
         actions.bind(minimum_height=actions.setter("height"))
-        actions_title = Label(text="Quick Actions", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24))
+        actions_title = Label(text="Start monitoring", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24))
         actions.add_widget(actions_title)
+
+        actions_hint = Label(
+            text="Tap Start to begin listening.",
+            color=theme.palette.text_dim,
+            font_size=theme.caption,
+            size_hint_y=None,
+            height=theme.dp(18),
+        )
+        actions.add_widget(actions_hint)
 
         grid = GridLayout(cols=2, spacing=theme.gap_s, size_hint_y=None)
         grid.bind(minimum_height=grid.setter("height"))
 
-        self.start_button = PrimaryButton(theme, text="Start")
+        self.start_button = PrimaryButton(theme, text="Start monitoring")
         self.stop_button = SecondaryButton(theme, text="Stop")
         self.start_button.height = theme.button_height
         self.stop_button.height = theme.button_height
@@ -90,6 +99,7 @@ class DashboardScreen(Screen):
             ("Networks", "networks"),
             ("Settings", "settings"),
             ("Evidence", "settings_evidence"),
+            ("Setup", "setup"),
         ):
             button = SecondaryButton(theme, text=label)
             button.height = theme.button_height

@@ -22,7 +22,7 @@ class SettingsEvidenceScreen(Screen):
             padding=[theme.gap_m, theme.gap_m, theme.gap_m, theme.gap_m],
             spacing=theme.gap_m,
         )
-        root.add_widget(self._header("Evidence (PCAP)"))
+        root.add_widget(self._header("Evidence capture"))
 
         scroll = ScrollView(do_scroll_x=False)
         content = BoxLayout(orientation="vertical", spacing=theme.gap_m, size_hint_y=None)
@@ -37,10 +37,11 @@ class SettingsEvidenceScreen(Screen):
         )
         evidence_card.bind(minimum_height=evidence_card.setter("height"))
         evidence_card.add_widget(self._section_label("Capture"))
-        evidence_card.add_widget(self._body_label("Tune alert PCAP capture and retention limits."))
+        evidence_card.add_widget(self._body_label("Save a short packet capture around alerts."))
+        evidence_card.add_widget(self._body_label("Adjust storage limits to fit this device."))
 
         self.pcap_toggle = self._toggle_button(
-            "PCAP capture: ON" if self.app.app_config.evidence.pcap_enabled else "PCAP capture: OFF",
+            "Packet capture: ON" if self.app.app_config.evidence.pcap_enabled else "Packet capture: OFF",
             self.app.app_config.evidence.pcap_enabled,
             self._toggle_pcap,
         )
@@ -48,7 +49,7 @@ class SettingsEvidenceScreen(Screen):
 
         self.buffer_stepper = Stepper(
             theme,
-            label="PCAP buffer (s)",
+            label="Capture buffer (s)",
             value=int(self.app.app_config.evidence.pcap_buffer_seconds),
             step=5,
             on_change=self._update_buffer,
@@ -57,7 +58,7 @@ class SettingsEvidenceScreen(Screen):
 
         self.max_files_stepper = Stepper(
             theme,
-            label="Max PCAP files",
+            label="Max capture files",
             value=int(self.app.app_config.evidence.pcap_max_files),
             step=10,
             on_change=self._update_max_files,
@@ -66,14 +67,14 @@ class SettingsEvidenceScreen(Screen):
 
         self.max_mb_stepper = Stepper(
             theme,
-            label="Max PCAP MB",
+            label="Max capture MB",
             value=int(self.app.app_config.evidence.pcap_max_total_mb),
             step=25,
             on_change=self._update_max_mb,
         )
         evidence_card.add_widget(self.max_mb_stepper)
 
-        evidence_card.add_widget(self._field("PCAP path", self._value_label(self._pcap_path())))
+        evidence_card.add_widget(self._field("Evidence folder", self._value_label(self._pcap_path())))
         content.add_widget(evidence_card)
 
         scroll.add_widget(content)
@@ -165,7 +166,7 @@ class SettingsEvidenceScreen(Screen):
 
     def _toggle_pcap(self, _instance) -> None:
         enabled = self.pcap_toggle.state == "down"
-        self.pcap_toggle.text = "PCAP capture: ON" if enabled else "PCAP capture: OFF"
+        self.pcap_toggle.text = "Packet capture: ON" if enabled else "Packet capture: OFF"
         self.app.app_config.evidence.pcap_enabled = enabled
 
     def _update_buffer(self, value: int) -> None:
@@ -186,7 +187,7 @@ class SettingsEvidenceScreen(Screen):
 
     def refresh(self) -> None:
         self.pcap_toggle.state = "down" if self.app.app_config.evidence.pcap_enabled else "normal"
-        self.pcap_toggle.text = "PCAP capture: ON" if self.app.app_config.evidence.pcap_enabled else "PCAP capture: OFF"
+        self.pcap_toggle.text = "Packet capture: ON" if self.app.app_config.evidence.pcap_enabled else "Packet capture: OFF"
         self.buffer_stepper.value = int(self.app.app_config.evidence.pcap_buffer_seconds)
         self.buffer_stepper.value_label.text = str(self.buffer_stepper.value)
         self.max_files_stepper.value = int(self.app.app_config.evidence.pcap_max_files)

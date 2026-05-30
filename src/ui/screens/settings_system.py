@@ -21,7 +21,7 @@ class SettingsSystemScreen(Screen):
             padding=[theme.gap_m, theme.gap_m, theme.gap_m, theme.gap_m],
             spacing=theme.gap_m,
         )
-        root.add_widget(self._header("System"))
+        root.add_widget(self._header("Device"))
 
         tools_card = Card(
             theme,
@@ -31,8 +31,8 @@ class SettingsSystemScreen(Screen):
             size_hint_y=None,
         )
         tools_card.bind(minimum_height=tools_card.setter("height"))
-        tools_card.add_widget(self._section_label("Display & Tools"))
-        tools_card.add_widget(self._body_label("Theme and diagnostics controls."))
+        tools_card.add_widget(self._section_label("Display and tools"))
+        tools_card.add_widget(self._body_label("Theme and device checks."))
 
         self.theme_toggle = self._toggle_button(
             "Theme: Dark" if self.app.theme_mode == "dark" else "Theme: Light",
@@ -41,7 +41,7 @@ class SettingsSystemScreen(Screen):
         )
         tools_card.add_widget(self.theme_toggle)
 
-        self.health_button = SecondaryButton(theme, text="Open Health Checks")
+        self.health_button = SecondaryButton(theme, text="Open device checks")
         self.health_button.size_hint_y = None
         self.health_button.height = theme.button_height
         self.health_button.bind(on_press=lambda *_: self.app.show_screen("diagnostics"))
@@ -56,9 +56,9 @@ class SettingsSystemScreen(Screen):
             size_hint_y=None,
         )
         paths_card.bind(minimum_height=paths_card.setter("height"))
-        paths_card.add_widget(self._section_label("Paths"))
-        paths_card.add_widget(self._field("Database path", self._value_label(self.app.db_path)))
-        paths_card.add_widget(self._field("Logging level", self._value_label(self.app.app_config.logging.level)))
+        paths_card.add_widget(self._section_label("Storage"))
+        paths_card.add_widget(self._field("Database file", self._value_label(self.app.db_path)))
+        paths_card.add_widget(self._field("Logging level (advanced)", self._value_label(self.app.app_config.logging.level)))
         root.add_widget(paths_card)
 
         actions = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.button_height, spacing=theme.gap_s)

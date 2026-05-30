@@ -17,6 +17,7 @@ from ..health import list_wireless_interfaces
 from .components import FooterNav, HeaderBar
 from .controller import MonitorController
 from .data import demo_alerts, demo_networks
+from .onboarding import should_show_setup
 from .screens.alerts import AlertsScreen
 from .screens.dashboard import DashboardScreen
 from .screens.diagnostics import DiagnosticsScreen
@@ -25,6 +26,7 @@ from .screens.settings import SettingsScreen
 from .screens.settings_evidence import SettingsEvidenceScreen
 from .screens.settings_network import SettingsNetworkScreen
 from .screens.settings_system import SettingsSystemScreen
+from .screens.setup import SetupScreen
 from .state import AppState
 from .theme import resolve_theme
 
@@ -42,6 +44,7 @@ class PWDBoxApp(App):
         self.theme = resolve_theme(self.theme_mode)
         self.interface_choice = self.app_config.capture.interface or "wlan1"
         self.battery_monitor = build_battery_monitor(demo=self.demo)
+        self.setup_complete = False
 
         self.screen_manager: Optional[ScreenManager] = None
         self.header_bar: Optional[HeaderBar] = None
@@ -54,6 +57,7 @@ class PWDBoxApp(App):
         self.settings_evidence: Optional[SettingsEvidenceScreen] = None
         self.settings_system: Optional[SettingsSystemScreen] = None
         self.diagnostics: Optional[DiagnosticsScreen] = None
+        self.setup: Optional[SetupScreen] = None
 
         self.load_settings()
 
@@ -86,6 +90,7 @@ class PWDBoxApp(App):
         self.app_config.evidence.pcap_max_total_mb = int(
             get_setting("pcap_max_total_mb", self.app_config.evidence.pcap_max_total_mb, db_path=self.db_path)
         )
+        self.setup_complete = bool(get_setting("setup_complete", False, db_path=self.db_path))
         self.theme = resolve_theme(self.theme_mode)
 
     def persist_settings(self) -> None:
@@ -110,8 +115,14 @@ class PWDBoxApp(App):
             self.settings_evidence.refresh()
         if self.settings_system:
             self.settings_system.refresh()
+        if self.setup:
+            self.setup.refresh()
         if self.header_bar:
             self.header_bar.set_message("Settings reloaded")
+
+    def mark_setup_complete(self) -> None:
+        self.setup_complete = True
+        set_setting("setup_complete", True, db_path=self.db_path)
 
     def set_theme(self, mode: str) -> None:
         self.theme_mode = mode
@@ -136,6 +147,7 @@ class PWDBoxApp(App):
         self.settings_evidence = SettingsEvidenceScreen(self, self.theme)
         self.settings_system = SettingsSystemScreen(self, self.theme)
         self.diagnostics = DiagnosticsScreen(self, self.theme)
+        self.setup = SetupScreen(self, self.theme)
 
         self.screen_manager.add_widget(self.dashboard)
         self.screen_manager.add_widget(self.networks)
@@ -145,6 +157,7 @@ class PWDBoxApp(App):
         self.screen_manager.add_widget(self.settings_evidence)
         self.screen_manager.add_widget(self.settings_system)
         self.screen_manager.add_widget(self.diagnostics)
+        self.screen_manager.add_widget(self.setup)
 
         root.add_widget(self.screen_manager)
 
@@ -161,6 +174,8 @@ class PWDBoxApp(App):
             self.networks.update_status(self.state.status, self.state.running, self.state.last_error)
         if self.demo:
             Clock.schedule_interval(self._demo_tick, 1.0)
+        if self.screen_manager and should_show_setup(self.demo, self.setup_complete):
+            self.show_screen("setup")
 
     def start_monitoring(self) -> None:
         self.header_bar.set_message(None)
@@ -186,8 +201,6 @@ class PWDBoxApp(App):
         self.controller.stop()
 
     def show_screen(self, name: str) -> None:
-        if name == "history":
-            name = "alerts"
         if self.screen_manager:
             self.screen_manager.current = name
         if name == "settings" and self.settings:
@@ -200,6 +213,8 @@ class PWDBoxApp(App):
             self.settings_system.refresh()
         if name == "alerts" and self.alerts:
             self.alerts.refresh_history()
+        if name == "setup" and self.setup:
+            self.setup.refresh()
 
     def process_queue(self, _dt) -> None:
         updated_networks = False

@@ -42,26 +42,33 @@ class SettingsScreen(Screen):
         )
         hub_card.bind(minimum_height=hub_card.setter("height"))
 
-        # Settings hub: three compact, touch-friendly navigation buttons.
+        # Settings hub: compact, touch-friendly navigation buttons.
+        self.setup_button = BigNavButton(
+            theme,
+            title="Setup guide",
+            subtitle="First-run steps and tips",
+        )
         self.network_button = BigNavButton(
             theme,
             title="Network",
-            subtitle="Interface selection, monitor mode",
+            subtitle="Choose adapter and listening mode",
         )
         self.evidence_button = BigNavButton(
             theme,
-            title="Evidence (PCAP)",
-            subtitle="Capture on alert, retention, path",
+            title="Evidence",
+            subtitle="Save alert evidence and limits",
         )
         self.system_button = BigNavButton(
             theme,
             title="System",
-            subtitle="Theme, diagnostics, storage",
+            subtitle="Theme, device checks, storage",
         )
+        self.setup_button.bind(on_press=lambda *_: self.app.show_screen("setup"))
         self.network_button.bind(on_press=lambda *_: self.app.show_screen("settings_network"))
         self.evidence_button.bind(on_press=lambda *_: self.app.show_screen("settings_evidence"))
         self.system_button.bind(on_press=lambda *_: self.app.show_screen("settings_system"))
 
+        hub_card.add_widget(self.setup_button)
         hub_card.add_widget(self.network_button)
         hub_card.add_widget(self.evidence_button)
         hub_card.add_widget(self.system_button)
@@ -69,7 +76,7 @@ class SettingsScreen(Screen):
         root.add_widget(center)
 
         hint = Label(
-            text="Tap a category to configure settings.",
+            text="Tap a section to adjust settings.",
             color=theme.palette.text_dim,
             font_size=theme.caption,
             size_hint_y=None,

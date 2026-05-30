@@ -25,7 +25,7 @@ class SettingsNetworkScreen(Screen):
             padding=[theme.gap_m, theme.gap_m, theme.gap_m, theme.gap_m],
             spacing=theme.gap_m,
         )
-        root.add_widget(self._header("Network"))
+        root.add_widget(self._header("Wireless setup"))
 
         card = Card(
             theme,
@@ -35,8 +35,8 @@ class SettingsNetworkScreen(Screen):
             size_hint_y=None,
         )
         card.bind(minimum_height=card.setter("height"))
-        card.add_widget(self._section_label("Interface"))
-        card.add_widget(self._body_label("Choose the capture interface and monitor behavior."))
+        card.add_widget(self._section_label("Adapter"))
+        card.add_widget(self._body_label("Choose the Wi-Fi adapter and listening mode."))
 
         self.interface_spinner = Spinner(
             text=self._pending_interface,
@@ -47,15 +47,16 @@ class SettingsNetworkScreen(Screen):
             background_color=theme.palette.surface_alt,
             color=theme.palette.text,
         )
-        card.add_widget(self._field("Capture interface", self.interface_spinner))
+        card.add_widget(self._field("Wi-Fi adapter", self.interface_spinner))
 
         self.monitor_toggle = self._toggle_button(
-            "Monitor mode: Auto-enable" if self.app.app_config.capture.enable_monitor else "Monitor mode: Validate only",
+            "Listening mode: Auto-enable" if self.app.app_config.capture.enable_monitor else "Listening mode: Validate only",
             self.app.app_config.capture.enable_monitor,
             self._toggle_monitor,
         )
         card.add_widget(self.monitor_toggle)
-        card.add_widget(self._body_label("Passive capture still needs sudo or CAP_NET_ADMIN/CAP_NET_RAW."))
+        card.add_widget(self._body_label("Listening mode lets this device hear Wi-Fi management frames."))
+        card.add_widget(self._body_label("On Linux you still need admin permissions (sudo or capabilities)."))
         root.add_widget(card)
 
         actions = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.button_height, spacing=theme.gap_s)
@@ -137,7 +138,7 @@ class SettingsNetworkScreen(Screen):
 
     def _toggle_monitor(self, _instance) -> None:
         enabled = self.monitor_toggle.state == "down"
-        self.monitor_toggle.text = "Monitor mode: Auto-enable" if enabled else "Monitor mode: Validate only"
+        self.monitor_toggle.text = "Listening mode: Auto-enable" if enabled else "Listening mode: Validate only"
         self.app.app_config.capture.enable_monitor = enabled
 
     def _save(self) -> None:
@@ -157,7 +158,7 @@ class SettingsNetworkScreen(Screen):
         self.interface_spinner.text = self._pending_interface
         self.monitor_toggle.state = "down" if self.app.app_config.capture.enable_monitor else "normal"
         self.monitor_toggle.text = (
-            "Monitor mode: Auto-enable"
+            "Listening mode: Auto-enable"
             if self.app.app_config.capture.enable_monitor
-            else "Monitor mode: Validate only"
+            else "Listening mode: Validate only"
         )

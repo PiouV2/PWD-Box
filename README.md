@@ -18,6 +18,10 @@ What it does :
 - Stores sessions/alerts/network snapshots in SQLite
 - Captures short PCAP evidence windows on alerts
 
+Phase 1 documentation
+- docs/PHASE1.md outlines system requirements, scope, assumptions, constraints,
+  success criteria, related work summary, and foundational diagrams.
+
 Quick setup (Raspberry Pi OS-ish)
 ```bash
 python3 -m venv .venv
@@ -39,6 +43,7 @@ Start the touchscreen UI:
 ```bash
 sudo env PYTHONPATH=. .venv/bin/python -m src.ui
 ```
+Use the Setup guide inside Settings to pick the adapter and run device checks.
 
 UI smoke test (boots UI with demo data, no sniffing):
 ```bash
@@ -58,6 +63,18 @@ Notes & limits
 - Touchscreen UI is provided via Kivy (see troubleshooting below).
 - No Bluetooth, no packet injection, and no offensive features.
 - Keeps CPU/memory low-ish for use on a Raspberry Pi 3B+.
+
+Supported hardware (reference build)
+- Raspberry Pi 3B+ or Pi 4
+- Monitor-mode USB Wi-Fi adapter (chipsets with monitor mode support)
+- 5-7 inch touchscreen (DSI or HDMI)
+- microSD storage (8 GB or more)
+- Optional INA219 battery sensor for power status
+
+Deployment notes
+- Monitoring requires admin permissions on Linux (sudo or capabilities).
+- Monitor mode must be supported by the Wi-Fi adapter.
+- Evidence retention is enforced by file count and total size limits.
 
 Data storage
 - SQLite DB: data/db/pwd_box.sqlite (auto-created)
