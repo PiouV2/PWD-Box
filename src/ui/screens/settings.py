@@ -31,9 +31,16 @@ class SettingsScreen(Screen):
         header_row.add_widget(title)
         root.add_widget(header_row)
 
-        scroll = ScrollView(do_scroll_x=False)
+        scroll = ScrollView(do_scroll_x=False, bar_width=0)
         content = BoxLayout(orientation="vertical", spacing=theme.gap_m, size_hint_y=None)
         content.bind(minimum_height=content.setter("height"))
+
+        edge_pad = BoxLayout(
+            orientation="vertical",
+            padding=[theme.gap_l, 0, theme.gap_l, 0],
+            size_hint_y=None,
+        )
+        edge_pad.bind(minimum_height=edge_pad.setter("height"))
 
         hub_card = Card(
             theme,
@@ -75,7 +82,8 @@ class SettingsScreen(Screen):
         hub_card.add_widget(self.network_button)
         hub_card.add_widget(self.evidence_button)
         hub_card.add_widget(self.system_button)
-        content.add_widget(hub_card)
+        edge_pad.add_widget(hub_card)
+        content.add_widget(edge_pad)
 
         hint = Label(
             text="Tap a section to adjust settings.",
