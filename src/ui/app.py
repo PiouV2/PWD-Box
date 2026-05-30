@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 import queue
 from typing import Optional
 
@@ -104,7 +105,7 @@ class PWDBoxApp(App):
         set_setting("pcap_max_total_mb", self.app_config.evidence.pcap_max_total_mb, db_path=self.db_path)
         set_setting("theme_mode", self.theme_mode, db_path=self.db_path)
         if self.header_bar:
-            self.header_bar.set_message("Settings saved")
+            self.header_bar.set_message("Settings saved", tone="ok")
 
     def reload_settings(self) -> None:
         self.load_settings()
@@ -119,7 +120,7 @@ class PWDBoxApp(App):
         if self.setup:
             self.setup.refresh()
         if self.header_bar:
-            self.header_bar.set_message("Settings reloaded")
+            self.header_bar.set_message("Settings reloaded", tone="neutral")
 
     def mark_setup_complete(self) -> None:
         self.setup_complete = True
@@ -142,7 +143,7 @@ class PWDBoxApp(App):
                 self.screen_manager.current = previous_screen
 
         if self.header_bar:
-            self.header_bar.set_message("Theme updated")
+            self.header_bar.set_message("Theme updated", tone="neutral")
 
     def _compose_root(self, root: BoxLayout) -> None:
         self.header_bar = HeaderBar(self.theme, title="PWD-Box")
@@ -194,7 +195,13 @@ class PWDBoxApp(App):
             self.show_screen("setup")
 
     def start_monitoring(self) -> None:
-        self.header_bar.set_message(None)
+        if self.controller.is_running():
+            if self.header_bar:
+                self.header_bar.set_message("Monitoring already running", tone="neutral")
+            return
+
+        if self.header_bar:
+            self.header_bar.set_message(None, tone="neutral")
         interface = (self.interface_choice or "wlan1").strip() or "wlan1"
         self.interface_choice = interface
         self.app_config.capture.interface = interface
@@ -210,13 +217,18 @@ class PWDBoxApp(App):
                     "adapter_ok": False,
                     "monitor_mode": False,
                     "logging_on": False,
+                    "evidence_active": False,
                     "running": False,
                     "interface": interface,
                     "message": message,
                 }
                 self.state.last_error = message
+                self.state.evidence_error = None
+                self.state.evidence_notice = None
+                self.state.evidence_active = False
+                self.state.last_saved_pcap_path = None
                 if self.header_bar:
-                    self.header_bar.set_message(message)
+                    self.header_bar.set_message(message, tone="error")
                 if self.networks:
                     self.networks.update_status(self.state.status, False, message)
                 self._update_dashboard()
@@ -226,6 +238,7 @@ class PWDBoxApp(App):
             "adapter_ok": False,
             "monitor_mode": False,
             "logging_on": False,
+            "evidence_active": False,
             "running": False,
             "interface": interface,
             "message": None,
@@ -235,13 +248,25 @@ class PWDBoxApp(App):
         self.state.session_alert_count = 0
         self.state.last_alert_time = None
         self.state.last_error = None
+        self.state.evidence_error = None
+        self.state.evidence_notice = None
+        self.state.evidence_active = False
+        self.state.last_saved_pcap_path = None
         if self.networks:
             self.networks.update_networks(self.state.networks)
             self.networks.update_status(self.state.status, self.state.running, self.state.last_error)
-        self.controller.start(interface=interface)
+        started = self.controller.start(interface=interface)
+        if not started and self.header_bar:
+            self.header_bar.set_message("Monitoring already running", tone="neutral")
 
     def stop_monitoring(self) -> None:
-        self.controller.stop()
+        stopped = self.controller.stop()
+        if not stopped and self.header_bar:
+            if self.state.last_saved_pcap_path:
+                filename = Path(self.state.last_saved_pcap_path).name
+                self.header_bar.set_message(f"Last evidence file: {filename}", tone="ok")
+            else:
+                self.header_bar.set_message("Monitoring already stopped", tone="neutral")
 
     def show_screen(self, name: str) -> None:
         if self.screen_manager:
@@ -262,6 +287,7 @@ class PWDBoxApp(App):
     def process_queue(self, _dt) -> None:
         updated_networks = False
         updated_alerts = False
+        refresh_history = False
         while True:
             try:
                 event = self.event_queue.get_nowait()
@@ -273,6 +299,7 @@ class PWDBoxApp(App):
             if event_type == "status":
                 self.state.status = data
                 self.state.running = bool(data.get("running"))
+                self.state.evidence_active = bool(data.get("evidence_active", self.state.evidence_active))
                 message = data.get("message")
                 self.state.last_error = message if message else None
             elif event_type == "networks":
@@ -284,8 +311,26 @@ class PWDBoxApp(App):
                 self.state.last_alert_time = data.get("timestamp")
                 self.state.session_alert_count += 1
                 updated_alerts = True
+            elif event_type == "evidence":
+                if "active" in data:
+                    active = bool(data.get("active"))
+                    self.state.evidence_active = active
+                    self.state.status["evidence_active"] = active
+                notice = data.get("notice")
+                if notice:
+                    self.state.evidence_notice = str(notice)
+                error = data.get("error")
+                if error:
+                    self.state.evidence_error = str(error)
+                    self.state.evidence_notice = None
+                pcap_path = data.get("pcap_path")
+                if pcap_path:
+                    self.state.last_saved_pcap_path = str(pcap_path)
+                    refresh_history = True
             elif event_type == "stopped":
                 self.state.running = False
+                self.state.evidence_active = False
+                self.state.status["evidence_active"] = False
 
         self._update_dashboard()
         if self.networks:
@@ -294,6 +339,8 @@ class PWDBoxApp(App):
             self.networks.update_status(self.state.status, self.state.running, self.state.last_error)
         if updated_alerts and self.alerts:
             self.alerts.update_alerts(self.state.alerts)
+        if refresh_history and self.alerts:
+            self.alerts.refresh_history()
 
     def refresh_battery_status(self, _dt) -> None:
         if not self.header_bar:
@@ -304,8 +351,10 @@ class PWDBoxApp(App):
         if not self.dashboard or not self.header_bar:
             return
         status = self.state.status
+        status_error = self.state.last_error
+        evidence_error = self.state.evidence_error
         if self.controller.is_running():
-            if status.get("message"):
+            if status_error:
                 state_text = "ERROR"
                 tone = "error"
             elif status.get("adapter_ok") and status.get("monitor_mode"):
@@ -315,7 +364,7 @@ class PWDBoxApp(App):
                 state_text = "STARTING"
                 tone = "warn"
         else:
-            if self.state.last_error:
+            if status_error:
                 state_text = "ERROR"
                 tone = "error"
             else:
@@ -323,12 +372,24 @@ class PWDBoxApp(App):
                 tone = "neutral"
 
         self.header_bar.update_status(state_text, tone)
-        self.header_bar.set_message(self.state.last_error)
+        if status_error:
+            self.header_bar.set_message(status_error, tone="error")
+        elif evidence_error:
+            self.header_bar.set_message(evidence_error, tone="error")
+        elif self.state.evidence_notice:
+            notice_tone = "warn" if self.state.evidence_active else "ok"
+            self.header_bar.set_message(self.state.evidence_notice, tone=notice_tone)
+        else:
+            self.header_bar.set_message(None, tone="neutral")
         self.dashboard.update_status(status, state_text, tone)
         self.dashboard.update_alert_summary(self.state.last_alert_time, self.state.session_alert_count)
 
-        if self.state.last_error:
-            self.dashboard.show_alert_banner(self.state.last_error)
+        if status_error:
+            self.dashboard.show_alert_banner(status_error, tone="error")
+        elif evidence_error:
+            self.dashboard.show_alert_banner(evidence_error, tone="error")
+        elif self.state.evidence_active:
+            self.dashboard.show_alert_banner("Capturing evidence...", tone="ok")
         elif self.state.alerts:
             latest = self.state.alerts[0]
             banner_text = f"Alert: {latest.get('alert_type')} {latest.get('key')}"

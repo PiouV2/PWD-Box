@@ -236,9 +236,12 @@ class AlertsScreen(Screen):
         rows = []
         for session in sessions:
             duration = _format_duration(session.get("start_time"), session.get("end_time"))
+            session_pcap = session.get("pcap_path")
+            session_pcap_name = Path(session_pcap).name if session_pcap else "-"
             summary = (
                 f"#{session.get('id')} {session.get('interface') or '-'} "
-                f"{session.get('start_time')} {duration} alerts={session.get('alert_count')}"
+                f"{session.get('start_time')} {duration} alerts={session.get('alert_count')} "
+                f"pcap={session_pcap_name}"
             )
             rows.append(
                 {

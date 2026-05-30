@@ -16,7 +16,8 @@ What it does :
 - Parses 802.11 management frames and recognizes deauth frames
 - Alerts when deauth frames exceed configured thresholds (sliding window)
 - Stores sessions/alerts/network snapshots in SQLite
-- Captures short PCAP evidence windows on alerts
+- Captures a session PCAP while monitoring is running
+- Captures short alert PCAP snapshots from the rolling buffer
 
 Phase 1 documentation
 - docs/PHASE1.md outlines system requirements, scope, assumptions, constraints,
@@ -89,6 +90,12 @@ Retention defaults
 - DB: all sessions/alerts are kept by default (no automatic purge).
 - PCAP: defaults to max 200 files or 100 MB total, deleting oldest first.
 - Tune storage and evidence settings in config/default.yaml.
+
+Evidence capture behavior
+- Press Start monitoring: a new session PCAP file is created and recording begins.
+- While running: the UI shows "Capturing evidence..." when capture is active.
+- Press Stop: capture closes cleanly and the file is finalized for review.
+- Alert snapshots still include short pre-alert windows when deauth floods trigger alerts.
 
 Troubleshooting
 - Permissions: run with sudo or grant CAP_NET_ADMIN and CAP_NET_RAW.

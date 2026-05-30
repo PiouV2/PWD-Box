@@ -282,7 +282,17 @@ class HeaderBar(BoxLayout):
     def update_battery(self, snapshot: BatterySnapshot) -> None:
         self.battery_chip.set_snapshot(snapshot)
 
-    def set_message(self, message: Optional[str]) -> None:
+    def set_message(self, message: Optional[str], tone: str = "warn") -> None:
+        palette = self.theme.palette
+        if tone == "error":
+            color = palette.danger
+        elif tone == "ok":
+            color = palette.success
+        elif tone == "neutral":
+            color = palette.text_dim
+        else:
+            color = palette.warning
+        self.message_label.color = color
         self.message_label.text = message or ""
 
 

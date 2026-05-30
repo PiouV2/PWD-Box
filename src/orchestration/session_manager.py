@@ -15,6 +15,7 @@ from ..config import Config
 from ..detection.deauth_detector import DeauthDetector
 from ..evidence.pcap import (
     PcapBuffer,
+    SessionPcapCapture,
     enforce_pcap_retention,
     save_pcap_for_alert,
 )
@@ -26,6 +27,7 @@ from ..storage.db import (
     log_alert,
     log_network_snapshot,
     update_alert_pcap,
+    update_session_pcap,
 )
 from ..utils.logging import RateLimiter
 
@@ -48,6 +50,7 @@ class SessionManager:
             "adapter_ok": False,
             "monitor_mode": False,
             "logging_on": False,
+            "evidence_active": False,
             "running": False,
             "interface": None,
             "message": None,
@@ -62,11 +65,15 @@ class SessionManager:
         self.snapshot_limiter = RateLimiter(config.storage.snapshot_interval_seconds)
         self.render_console = True
         self.pcap_buffer: Optional[PcapBuffer] = None
+        self.session_capture: Optional[SessionPcapCapture] = None
+        self.session_pcap_path: Optional[str] = None
+        self.session_capture_error: Optional[str] = None
         if config.evidence.pcap_enabled:
             self.pcap_buffer = PcapBuffer(
                 config.evidence.pcap_buffer_seconds,
                 config.evidence.pcap_max_packets,
             )
+            self.session_capture = SessionPcapCapture(config.evidence.pcap_dir)
 
     def run(
         self,
@@ -111,6 +118,8 @@ class SessionManager:
             self._close_session("error")
             return 3
 
+        self._start_session_capture()
+
         self._emit_status(adapter_ok=True, running=True, message=None)
         if install_signal_handlers:
             self._install_signal_handlers()
@@ -133,6 +142,7 @@ class SessionManager:
         logging.info("Capture stopped.")
         self._emit_status(
             running=False,
+            evidence_active=False,
             message=None if exit_code == 0 else self.status.get("message"),
         )
         self._close_session("stopped" if self.stop_event.is_set() else "ended")
@@ -176,14 +186,15 @@ class SessionManager:
                 status="running",
                 db_path=self.db_path,
             )
-            self._emit_status(logging_on=True)
+            self._emit_status(logging_on=True, evidence_active=False)
         except Exception as exc:
             logging.error("Database init failed: %s", exc)
             self.db_path = None
             self.session_id = None
-            self._emit_status(logging_on=False, message="DB init failed")
+            self._emit_status(logging_on=False, evidence_active=False, message="DB init failed")
 
     def _close_session(self, status: str) -> None:
+        self._finalize_session_capture()
         if self.session_id is None:
             return
         try:
@@ -191,7 +202,95 @@ class SessionManager:
         except Exception as exc:
             logging.error("Session close failed: %s", exc)
 
+    def _start_session_capture(self) -> None:
+        if self.session_capture is None or self.session_id is None:
+            return
+        try:
+            output_path = self.session_capture.start(self.session_id)
+        except Exception as exc:
+            self._disable_session_capture(exc)
+            return
+
+        self.session_pcap_path = str(output_path)
+        try:
+            update_session_pcap(self.session_id, self.session_pcap_path, db_path=self.db_path)
+        except Exception as exc:
+            logging.error("Session evidence path update failed: %s", exc)
+
+        self._emit_status(evidence_active=True)
+        self._emit_event(
+            "evidence",
+            {
+                "active": True,
+                "notice": "Capturing evidence...",
+            },
+        )
+
+    def _finalize_session_capture(self) -> None:
+        if self.session_capture is None:
+            return
+
+        try:
+            output_path = self.session_capture.stop()
+        except Exception as exc:
+            self._disable_session_capture(exc)
+            return
+
+        self._emit_status(evidence_active=False)
+        self.session_capture = None
+
+        if output_path is None:
+            return
+        self.session_pcap_path = str(output_path)
+
+        if self.session_id is not None:
+            try:
+                update_session_pcap(self.session_id, self.session_pcap_path, db_path=self.db_path)
+            except Exception as exc:
+                logging.error("Session evidence path update failed: %s", exc)
+
+        try:
+            enforce_pcap_retention(
+                self.config.evidence.pcap_dir,
+                self.config.evidence.pcap_max_files,
+                self.config.evidence.pcap_max_total_mb,
+            )
+        except Exception as exc:
+            logging.error("Evidence retention failed: %s", exc)
+
+        self._emit_event(
+            "evidence",
+            {
+                "active": False,
+                "pcap_path": self.session_pcap_path,
+                "notice": f"Evidence saved: {output_path.name}",
+            },
+        )
+
+    def _disable_session_capture(self, exc: Exception) -> None:
+        self.session_capture_error = f"Evidence capture failed: {exc}"
+        logging.error(self.session_capture_error)
+        if self.session_capture is not None:
+            try:
+                self.session_capture.stop()
+            except Exception:
+                pass
+        self.session_capture = None
+        self._emit_status(evidence_active=False)
+        self._emit_event(
+            "evidence",
+            {
+                "active": False,
+                "error": self.session_capture_error,
+            },
+        )
+
     def _handle_packet(self, pkt) -> None:
+        if self.session_capture is not None:
+            try:
+                self.session_capture.write(pkt)
+            except Exception as exc:
+                self._disable_session_capture(exc)
         if self.pcap_buffer is not None:
             self.pcap_buffer.add(pkt)
         event = parse_packet(pkt)

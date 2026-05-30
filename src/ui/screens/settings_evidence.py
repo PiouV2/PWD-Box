@@ -37,7 +37,8 @@ class SettingsEvidenceScreen(Screen):
         )
         evidence_card.bind(minimum_height=evidence_card.setter("height"))
         evidence_card.add_widget(self._section_label("Capture"))
-        evidence_card.add_widget(self._body_label("Save a short packet capture around alerts."))
+        evidence_card.add_widget(self._body_label("Save packet capture for each monitoring session."))
+        evidence_card.add_widget(self._body_label("Buffer controls still apply to alert snapshots."))
         evidence_card.add_widget(self._body_label("Adjust storage limits to fit this device."))
 
         self.pcap_toggle = self._toggle_button(

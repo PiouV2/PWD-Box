@@ -46,10 +46,12 @@ def init_db(db_path: Optional[str] = None) -> Path:
                 interface TEXT,
                 start_time TEXT NOT NULL,
                 end_time TEXT,
-                status TEXT NOT NULL
+                status TEXT NOT NULL,
+                pcap_path TEXT
             )
             """
         )
+        _ensure_column(conn, "sessions", "pcap_path", "TEXT")
         conn.execute(
             """
             CREATE TABLE IF NOT EXISTS alerts (
@@ -91,6 +93,14 @@ def init_db(db_path: Optional[str] = None) -> Path:
     return path
 
 
+def _ensure_column(conn: sqlite3.Connection, table_name: str, column_name: str, definition: str) -> None:
+    rows = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+    existing = {str(row[1]) for row in rows}
+    if column_name in existing:
+        return
+    conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {definition}")
+
+
 def create_session(
     interface: Optional[str],
     start_time: Optional[str] = None,
@@ -117,6 +127,18 @@ def close_session(
         conn.execute(
             "UPDATE sessions SET end_time = ?, status = ? WHERE id = ?",
             (end_ts, status, session_id),
+        )
+
+
+def update_session_pcap(
+    session_id: int,
+    pcap_path: Optional[str],
+    db_path: Optional[str] = None,
+) -> None:
+    with _connect(db_path) as conn:
+        conn.execute(
+            "UPDATE sessions SET pcap_path = ? WHERE id = ?",
+            (pcap_path, session_id),
         )
 
 
@@ -247,7 +269,7 @@ def list_sessions(
 
     where = " WHERE " + " AND ".join(clauses) if clauses else ""
     query = (
-        "SELECT id, interface, start_time, end_time, status "
+        "SELECT id, interface, start_time, end_time, status, pcap_path "
         "FROM sessions" + where + " ORDER BY start_time DESC, id DESC LIMIT ?"
     )
     params.append(int(limit))
@@ -262,7 +284,7 @@ def list_session_summaries(
     db_path: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     query = (
-        "SELECT s.id, s.interface, s.start_time, s.end_time, s.status, "
+        "SELECT s.id, s.interface, s.start_time, s.end_time, s.status, s.pcap_path, "
         "COUNT(a.id) as alert_count "
         "FROM sessions s "
         "LEFT JOIN alerts a ON a.session_id = s.id "

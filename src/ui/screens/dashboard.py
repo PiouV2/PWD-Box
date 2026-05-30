@@ -136,14 +136,15 @@ class DashboardScreen(Screen):
         interface = status.get("interface") or self.app.interface_choice or "-"
         self.interface_label.text = interface
         self.monitor_mode_label.text = "ON" if status.get("monitor_mode") else "OFF"
-        self.logging_label.text = "ON" if status.get("logging_on") else "OFF"
+        evidence_active = bool(status.get("evidence_active", status.get("logging_on")))
+        self.logging_label.text = "ON" if evidence_active else "OFF"
 
     def update_alert_summary(self, last_alert_time: Optional[str], count: int) -> None:
         self.last_alert_label.text = last_alert_time or "-"
         self.alert_count_label.text = str(count)
 
-    def show_alert_banner(self, message: Optional[str]) -> None:
+    def show_alert_banner(self, message: Optional[str], tone: str = "warn") -> None:
         if message:
-            self.alert_banner.show(message, tone="warn")
+            self.alert_banner.show(message, tone=tone)
         else:
             self.alert_banner.hide()

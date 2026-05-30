@@ -32,7 +32,7 @@ class PcapSettingsScreen(Screen):
 
         evidence_card = Card(theme, orientation="vertical", padding=theme.gap_m, spacing=theme.gap_s)
         evidence_card.add_widget(Label(text="Evidence & PCAP", color=theme.palette.text, font_size=theme.h3, size_hint_y=None, height=theme.dp(22)))
-        evidence_card.add_widget(self._body_label("Tune alert PCAP capture and retention limits for this device."))
+        evidence_card.add_widget(self._body_label("Tune session PCAP capture and retention limits for this device."))
 
         self.pcap_toggle = self._toggle_button(
             "PCAP capture: ON" if self.app.app_config.evidence.pcap_enabled else "PCAP capture: OFF",

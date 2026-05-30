@@ -66,7 +66,7 @@ class SettingsScreen(Screen):
         self.evidence_button = BigNavButton(
             theme,
             title="Evidence",
-            subtitle="Save alert evidence and limits",
+            subtitle="Session PCAP capture and limits",
         )
         self.system_button = BigNavButton(
             theme,

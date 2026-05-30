@@ -5,10 +5,11 @@ from pathlib import Path
 import time
 from typing import Deque, List, Optional, Tuple
 
-from scapy.utils import wrpcap
+from scapy.utils import PcapWriter, wrpcap
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_PCAP_DIR = PROJECT_ROOT / "data" / "pcaps"
+DEFAULT_LINKTYPE = 127
 
 
 class PcapBuffer:
@@ -31,6 +32,52 @@ class PcapBuffer:
             self._packets.popleft()
         while len(self._packets) > self.max_packets:
             self._packets.popleft()
+
+
+class SessionPcapCapture:
+    def __init__(self, pcap_dir: Optional[str] = None, linktype: int = DEFAULT_LINKTYPE) -> None:
+        self._pcap_dir = pcap_dir
+        self._linktype = linktype
+        self._writer: Optional[PcapWriter] = None
+        self.path: Optional[Path] = None
+
+    @property
+    def is_active(self) -> bool:
+        return self._writer is not None and self.path is not None
+
+    def start(
+        self,
+        session_id: int,
+        timestamp: Optional[float] = None,
+    ) -> Path:
+        if self.path is not None:
+            return self.path
+
+        target_dir = resolve_pcap_dir(self._pcap_dir)
+        target_dir.mkdir(parents=True, exist_ok=True)
+        ts = time.strftime("%Y%m%d_%H%M%S", time.localtime(timestamp or time.time()))
+        output_path = target_dir / f"pwd_{ts}_s{session_id}.pcap"
+        writer = PcapWriter(
+            str(output_path),
+            append=False,
+            sync=True,
+            linktype=self._linktype,
+        )
+        self._writer = writer
+        self.path = output_path
+        return output_path
+
+    def write(self, pkt) -> None:
+        if self._writer is None:
+            return
+        self._writer.write(pkt)
+
+    def stop(self) -> Optional[Path]:
+        writer = self._writer
+        self._writer = None
+        if writer is not None:
+            writer.close()
+        return self.path
 
 
 def resolve_pcap_dir(pcap_dir: Optional[str]) -> Path:
