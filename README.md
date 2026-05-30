@@ -1,110 +1,332 @@
-# PWD-Box — Portable Wireless Defence Box
+# PWD-Box
+Portable Wireless Defence Box for passive Wi-Fi deauthentication monitoring on Raspberry Pi.
 
-Hey! 👋 Welcome to PWD-Box. a small, friendly, and very passive Wi‑Fi watchdog.
+PWD-Box is a passive-only wireless watchdog. It listens to 802.11 management traffic, detects suspicious deauthentication floods, shows alerts on a touchscreen UI, and stores local evidence for later review.
 
-This repo is a prototype: it sniffs, parses, and watches for suspicious
-deauthentication floods. It is intentionally simple, lightweight, and safe.
+## Demo
 
-Important vibes (read this first):
-- This tool is passive-only. It listens. It does NOT send packets, deauths,
-  jam, or mess with networks. Use responsibly and only where you have permission.
+Add short GIFs here so readers can see the product before reading the details.
 
-What it does :
-- Health checks for tools, OS/Python, and adapter presence
-- Enables/validates monitor mode (where possible)
-- Passively scans for nearby APs and keeps an in-memory list
-- Parses 802.11 management frames and recognizes deauth frames
-- Alerts when deauth frames exceed configured thresholds (sliding window)
-- Stores sessions/alerts/network snapshots in SQLite
-- Captures a session PCAP while monitoring is running
-- Captures short alert PCAP snapshots from the rolling buffer
+![Dashboard monitoring demo](docs/media/dashboard-monitoring.gif)
+*Suggested clip: start monitoring, dashboard status updates, evidence recording active.*
 
-Phase 1 documentation
-- docs/PHASE1.md outlines system requirements, scope, assumptions, constraints,
-  success criteria, related work summary, and foundational diagrams.
+![Deauth alert demo](docs/media/deauth-alert.gif)
+*Suggested clip: alert banner appears, alert count updates, session evidence is saved.*
 
-Quick setup (Raspberry Pi OS-ish)
+![Settings and diagnostics demo](docs/media/settings-diagnostics.gif)
+*Suggested clip: setup flow, diagnostics screen, health check passing.*
+
+## Why This Exists
+
+Wi-Fi deauthentication abuse is disruptive and easy to miss without visibility into management traffic. PWD-Box is designed as a small, self-contained, passive device that helps an operator:
+
+- observe nearby Wi-Fi activity safely
+- detect deauthentication floods conservatively
+- retain session and alert evidence locally
+- operate the system from a simple touchscreen UI
+
+## Safety Boundary
+
+PWD-Box is passive-only.
+
+It does:
+
+- monitor Wi-Fi management traffic
+- detect likely deauthentication flood conditions
+- store sessions, alerts, snapshots, and PCAP evidence locally
+
+It does not:
+
+- inject packets
+- jam networks
+- deauthenticate clients
+- associate to networks for active probing
+- send telemetry to a cloud backend
+
+Use it only where you have permission to monitor wireless traffic.
+
+## Current Capabilities
+
+- health checks for Python, tools, permissions, and adapter readiness
+- monitor-mode validation and capture startup checks
+- passive AP observation and network snapshot logging
+- 802.11 management-frame parsing
+- deauthentication flood detection with a sliding threshold window
+- real-time touchscreen alerts and session status
+- SQLite persistence for sessions, alerts, snapshots, and settings
+- session-wide PCAP capture while monitoring is running
+- short alert-centered PCAP snapshots from the rolling buffer
+- evidence retention controls for file count and total size
+
+## Reference Build
+
+PWD-Box currently targets Raspberry Pi-class hardware.
+
+Recommended hardware:
+
+- Raspberry Pi 3B+ or Raspberry Pi 4
+- monitor-mode capable USB Wi-Fi adapter
+- 5-7 inch touchscreen
+- microSD card with at least 8 GB
+- optional INA219 battery sensor
+
+## Quick Start
+
+### 1. Create a virtual environment
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Run health checks (replace `wlan1` with your monitor interface):
+### 2. Run a health check
+
+Replace `wlan1` with the interface you intend to use.
+
 ```bash
 sudo env PYTHONPATH=. .venv/bin/python -m src.main health-check --interface wlan1
 ```
 
-Start passive monitoring:
+### 3. Start passive monitoring
+
 ```bash
 sudo env PYTHONPATH=. .venv/bin/python -m src.main monitor --interface wlan1
 ```
 
-Force monitor mode (helper script):
-```bash
-sudo env PYTHONPATH=. .venv/bin/python scripts/set_monitor_mode.py --interface wlan1
-```
+### 4. Start the touchscreen UI
 
-Start the touchscreen UI:
 ```bash
 sudo env PYTHONPATH=. .venv/bin/python -m src.ui
 ```
-Use the Setup guide inside Settings to pick the adapter and run device checks.
 
-UI smoke test (boots UI with demo data, no sniffing):
+### 5. Run the demo UI smoke test
+
 ```bash
 PYTHONPATH=. .venv/bin/python scripts/ui_smoke_test.py
 ```
 
-Run the (safe) tests:
+## Operator Workflow
+
+Typical use:
+
+1. power on the device
+2. open the UI
+3. complete setup if needed
+4. select or confirm the wireless interface
+5. run diagnostics / health check
+6. press Start monitoring
+7. watch the dashboard for live status and alerts
+8. press Stop to finalize the session PCAP
+
+## Project Structure
+
+```text
+src/
+    main.py                 CLI entry point
+    health.py               device and environment checks
+    config.py               config loading
+    models.py               shared dataclasses
+
+    capture/
+        wifi_sniffer.py       packet capture
+        packet_parser.py      802.11 parsing
+
+    detection/
+        deauth_detector.py    deauth threshold logic
+
+    orchestration/
+        session_manager.py    monitoring lifecycle
+
+    evidence/
+        pcap.py               session and alert PCAP handling
+
+    storage/
+        db.py                 SQLite persistence
+
+    ui/
+        app.py                Kivy app
+        controller.py         background monitor control
+        screens/              dashboard, alerts, settings, diagnostics
+```
+
+## Architecture
+
+```mermaid
+flowchart LR
+        CLI[CLI / UI Entry] --> Session[Session Manager]
+        Session --> Capture[Wi-Fi Sniffer]
+        Capture --> Parser[Packet Parser]
+        Parser --> Detector[Deauth Detector]
+        Detector --> Alerts[Alert Events]
+        Session --> DB[SQLite Storage]
+        Session --> Evidence[PCAP Capture + Retention]
+        Alerts --> UI[Touchscreen UI]
+```
+
+## Data Flow
+
+```mermaid
+flowchart LR
+        Sniffer[Sniffer] --> Parser[Parse Packet]
+        Parser -->|Deauth event| Detector[Threshold Check]
+        Detector -->|Alert| Storage[SQLite Alert]
+        Detector -->|Alert| Evidence[Save Alert Snapshot]
+        Session -->|Continuous packets| SessionPCAP[Session PCAP Writer]
+        Storage --> UI[Alert History]
+        SessionPCAP --> UI[Saved Evidence Metadata]
+```
+
+## Evidence and Storage
+
+Runtime data is stored inside the project under the `data/` directory.
+
+- SQLite database: `data/db/pwd_box.sqlite`
+- session PCAP files: `data/pcaps/`
+- alert PCAP snapshots: `data/pcaps/`
+
+Evidence behavior:
+
+- when monitoring starts, a new session PCAP file is opened
+- packets are written while monitoring runs
+- when monitoring stops, the session PCAP is finalized cleanly
+- when an alert triggers, a short alert-centered PCAP snapshot is also saved
+- retention limits bound PCAP count and total disk usage
+
+## Configuration
+
+Default configuration lives in `config/default.yaml`.
+
+Important settings include:
+
+- capture interface
+- deauth threshold and time window
+- AP stale timeout
+- evidence retention limits
+- storage locations
+
+Keep thresholds conservative. The goal is detection with low operator confusion, not aggressive triggering.
+
+## Testing
+
+Run all tests:
+
 ```bash
 pytest -q
 ```
 
-Config
-- The default settings are in `config/default.yaml`. Tweak the `interface`,
-  deauth thresholds, and AP stale timeout there. Keep thresholds conservative.
+Run focused tests:
 
-Notes & limits
-- Touchscreen UI is provided via Kivy (see troubleshooting below).
-- No Bluetooth, no packet injection, and no offensive features.
-- Keeps CPU/memory low-ish for use on a Raspberry Pi 3B+.
+```bash
+pytest tests/test_packet_parser.py -q
+pytest tests/test_deauth_detector.py::test_threshold_triggers_alert -q
+pytest tests/test_onboarding.py -q
+```
 
-Supported hardware (reference build)
-- Raspberry Pi 3B+ or Pi 4
-- Monitor-mode USB Wi-Fi adapter (chipsets with monitor mode support)
-- 5-7 inch touchscreen (DSI or HDMI)
-- microSD storage (8 GB or more)
-- Optional INA219 battery sensor for power status
+## Troubleshooting
 
-Deployment notes
-- Monitoring requires admin permissions on Linux (sudo or capabilities).
-- Monitor mode must be supported by the Wi-Fi adapter.
-- Evidence retention is enforced by file count and total size limits.
+### Permissions
+Monitoring usually requires elevated privileges on Linux.
 
-Data storage
-- SQLite DB: data/db/pwd_box.sqlite (auto-created)
-- PCAP evidence: data/pcaps/ (auto-created)
+Use `sudo`, or configure the necessary capabilities for packet capture.
 
-Retention defaults
-- DB: all sessions/alerts are kept by default (no automatic purge).
-- PCAP: defaults to max 200 files or 100 MB total, deleting oldest first.
-- Tune storage and evidence settings in config/default.yaml.
+### Adapter support
+Your Wi-Fi adapter must support monitor mode.
 
-Evidence capture behavior
-- Press Start monitoring: a new session PCAP file is created and recording begins.
-- While running: the UI shows "Capturing evidence..." when capture is active.
-- Press Stop: capture closes cleanly and the file is finalized for review.
-- Alert snapshots still include short pre-alert windows when deauth floods trigger alerts.
+If needed, use the helper:
 
-Troubleshooting
-- Permissions: run with sudo or grant CAP_NET_ADMIN and CAP_NET_RAW.
-- Interface: confirm the adapter name with `iw dev` and update config/default.yaml.
-- Kivy install: on Raspberry Pi OS, install build deps if pip fails
-    (e.g., `sudo apt install libgl1-mesa-dev libgles2-mesa-dev`).
+```bash
+sudo env PYTHONPATH=. .venv/bin/python scripts/set_monitor_mode.py --interface wlan1
+```
 
-If you break anything, blame the cat. If the cat is innocent, ping me.
+### Kivy dependencies
+If Kivy fails to install on Raspberry Pi OS, install the necessary graphics build dependencies first.
 
-Have fun being a polite network detective! 🕵️‍♀️
+### Storage checks
+The health check validates that required storage directories can be created and used before a monitoring session begins.
 
-— The PWD-Box Team (well, mainly code and good intentions)
+## Phase 1 Foundations
+
+This repository currently reflects the Phase 1 foundation of the project.
+
+### Scope
+
+In scope:
+
+- passive-only Wi-Fi monitoring of 802.11 management traffic
+- deauthentication flood detection with conservative thresholds
+- touchscreen UI for live status and alerts
+- local evidence storage with SQLite and PCAP
+- on-device settings for interface, evidence, and diagnostics
+
+Out of scope:
+
+- packet injection
+- jamming or offensive tooling
+- Bluetooth monitoring
+- active network scanning or association
+- cloud backends or remote telemetry
+
+### Functional Requirements
+
+- FR1: capture Wi-Fi management frames in monitor mode without transmitting
+- FR2: detect deauthentication floods using a sliding window and threshold
+- FR3: present real-time alerts on a touchscreen UI
+- FR4: store sessions, alerts, and network snapshots in SQLite
+- FR5: capture PCAP evidence with retention limits
+- FR6: provide on-device configuration for interface, evidence, and diagnostics
+
+### Non-Functional Requirements
+
+- NFR1: remain passive-only
+- NFR2: run on Raspberry Pi-class hardware
+- NFR3: rely on open-source libraries
+- NFR4: keep the UI understandable for non-expert operators
+- NFR5: bound storage use with retention controls
+
+### Assumptions
+
+- a monitor-mode capable adapter is available
+- the device runs Linux with appropriate permissions
+- storage is local and persistent across reboots
+
+### Constraints
+
+- passive-only operation
+- no injection or active interference
+- lightweight dependencies and minimal services
+
+### Success Criteria
+
+- SC1: a deauth flood crossing the configured threshold triggers a UI alert
+- SC2: alerts are persisted with session context
+- SC3: PCAP evidence is saved and retained within configured bounds
+- SC4: a non-expert can start monitoring from the dashboard with minimal setup
+
+## Objective to Implementation Mapping
+
+| Objective | Implementation Area |
+| --- | --- |
+| Passive monitoring | `src/capture/wifi_sniffer.py`, `src/orchestration/session_manager.py` |
+| Packet parsing | `src/capture/packet_parser.py` |
+| Deauth detection | `src/detection/deauth_detector.py` |
+| Local persistence | `src/storage/db.py` |
+| Evidence capture | `src/evidence/pcap.py` |
+| Touchscreen operation | `src/ui/app.py`, `src/ui/screens/` |
+| Device checks | `src/health.py` |
+
+## Suggested Media Checklist
+
+If you want the README to feel complete, record these clips:
+
+- startup and health-check pass
+- dashboard during active monitoring
+- alert trigger and alert history update
+- evidence/session save confirmation
+- diagnostics or onboarding flow
+
+Keep each GIF under about 10 seconds and crop tightly around the UI so the motion reads quickly on GitHub.
+
+## Status
+
+PWD-Box is a Phase 1 prototype with working passive monitoring, local evidence capture, and an operator-facing UI. The design goal is a small, safe, local-first monitoring device rather than a general wireless attack toolkit.
