@@ -40,8 +40,8 @@ class SettingsSystemScreen(Screen):
         tools_card.add_widget(self._body_label("Theme and device checks."))
 
         self.theme_toggle = self._toggle_button(
-            "Theme: Dark" if self.app.theme_mode == "dark" else "Theme: Light",
-            self.app.theme_mode == "dark",
+            self._theme_label(self.app.theme_mode),
+            self.app.theme_mode == "white",
             self._toggle_theme,
         )
         tools_card.add_widget(self.theme_toggle)
@@ -150,8 +150,11 @@ class SettingsSystemScreen(Screen):
         return button
 
     def _toggle_theme(self, _instance) -> None:
-        self._pending_theme_mode = "dark" if self.theme_toggle.state == "down" else "light"
-        self.theme_toggle.text = "Theme: Dark" if self._pending_theme_mode == "dark" else "Theme: Light"
+        if self.theme_toggle.state == "down":
+            self._pending_theme_mode = "white"
+        else:
+            self._pending_theme_mode = "light"
+        self.theme_toggle.text = self._theme_label(self._pending_theme_mode)
 
     def _save(self) -> None:
         self.app.set_theme(self._pending_theme_mode)
@@ -163,5 +166,12 @@ class SettingsSystemScreen(Screen):
 
     def refresh(self) -> None:
         self._pending_theme_mode = self.app.theme_mode
-        self.theme_toggle.state = "down" if self.app.theme_mode == "dark" else "normal"
-        self.theme_toggle.text = "Theme: Dark" if self.app.theme_mode == "dark" else "Theme: Light"
+        self.theme_toggle.state = "down" if self.app.theme_mode == "white" else "normal"
+        self.theme_toggle.text = self._theme_label(self.app.theme_mode)
+
+    def _theme_label(self, mode: str) -> str:
+        if mode == "white":
+            return "Theme: White"
+        if mode == "dark":
+            return "Theme: Dark"
+        return "Theme: Light"
