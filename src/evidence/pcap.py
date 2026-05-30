@@ -54,7 +54,10 @@ class SessionPcapCapture:
             return self.path
 
         target_dir = resolve_pcap_dir(self._pcap_dir)
-        target_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            target_dir.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            raise RuntimeError(f"Could not create evidence directory: {target_dir}") from exc
         ts = time.strftime("%Y%m%d_%H%M%S", time.localtime(timestamp or time.time()))
         output_path = target_dir / f"pwd_{ts}_s{session_id}.pcap"
         writer = PcapWriter(
@@ -99,7 +102,10 @@ def save_pcap_for_alert(
         return None
 
     target_dir = resolve_pcap_dir(pcap_dir)
-    target_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        target_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        raise RuntimeError(f"Could not create evidence directory: {target_dir}") from exc
     ts = time.strftime("%Y%m%d_%H%M%S", time.localtime(timestamp or time.time()))
     filename = f"pwd_{ts}_s{session_id}_a{alert_id}.pcap"
     output_path = target_dir / filename

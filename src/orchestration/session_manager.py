@@ -191,7 +191,11 @@ class SessionManager:
             logging.error("Database init failed: %s", exc)
             self.db_path = None
             self.session_id = None
-            self._emit_status(logging_on=False, evidence_active=False, message="DB init failed")
+            self._emit_status(
+                logging_on=False,
+                evidence_active=False,
+                message=f"DB init failed: {exc}",
+            )
 
     def _close_session(self, status: str) -> None:
         self._finalize_session_capture()

@@ -1,5 +1,6 @@
 from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt, RadioTap
 from scapy.utils import rdpcap
+import pytest
 
 try:
     from pwdbox.evidence.pcap import PcapBuffer, SessionPcapCapture, save_pcap_for_alert
@@ -70,3 +71,15 @@ def test_alert_pcap_snapshot_still_works(tmp_path) -> None:
     assert output_path is not None
     assert output_path.exists()
     assert len(rdpcap(str(output_path))) == 1
+
+
+def test_session_capture_raises_clear_error_if_dir_creation_fails(monkeypatch, tmp_path) -> None:
+    capture = SessionPcapCapture(pcap_dir=str(tmp_path / "pcaps"))
+
+    def _boom(*_args, **_kwargs):
+        raise OSError("permission denied")
+
+    monkeypatch.setattr("pathlib.Path.mkdir", _boom)
+
+    with pytest.raises(RuntimeError, match="Could not create evidence directory"):
+        capture.start(session_id=1)
