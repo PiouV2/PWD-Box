@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import os
 import platform
+from pathlib import Path
 import shutil
 import subprocess
 import sys
@@ -128,6 +129,47 @@ def _check_permissions() -> CheckResult:
     return CheckResult("Capture permissions", ok, details, fix)
 
 
+def _resolve_repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _resolve_storage_path(raw_path: Optional[str], default_rel_path: str) -> Path:
+    candidate = Path(raw_path) if raw_path else Path(default_rel_path)
+    if candidate.is_absolute():
+        return candidate
+    return _resolve_repo_root() / candidate
+
+
+def _check_storage_directories(config: Optional[Config]) -> List[CheckResult]:
+    results: List[CheckResult] = []
+    db_path = _resolve_storage_path(
+        config.storage.db_path if config else None,
+        "data/db/pwd_box.sqlite",
+    )
+    evidence_dir = _resolve_storage_path(
+        config.evidence.pcap_dir if config else None,
+        "data/pcaps",
+    )
+
+    for name, path in (
+        ("Database directory", db_path.parent),
+        ("Evidence directory", evidence_dir),
+    ):
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+            results.append(CheckResult(name, True, str(path)))
+        except OSError as exc:
+            results.append(
+                CheckResult(
+                    name,
+                    False,
+                    f"{path} ({exc})",
+                    f"Ensure '{path}' exists and is writable by the current user.",
+                )
+            )
+    return results
+
+
 def _check_interfaces(config: Optional[Config], interface: Optional[str]) -> List[CheckResult]:
     results: List[CheckResult] = []
     wireless = list_wireless_interfaces()
@@ -171,6 +213,7 @@ def run_health_check(
     results.extend(_check_packages())
     results.extend(_check_interfaces(config, interface))
     results.append(_check_permissions())
+    results.extend(_check_storage_directories(config))
     # Battery check: use INA219 (or demo driver) to sample battery voltage/current
     try:
         monitor = build_battery_monitor()
