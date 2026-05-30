@@ -4,8 +4,6 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.scrollview import ScrollView
-from kivy.uix.togglebutton import ToggleButton
-
 from ..components import Card, PrimaryButton, SecondaryButton
 from ..theme import Theme
 
@@ -15,7 +13,6 @@ class SettingsSystemScreen(Screen):
         super().__init__(name="settings_system", **kwargs)
         self.app = app
         self.theme = theme
-        self._pending_theme_mode = self.app.theme_mode
 
         root = BoxLayout(
             orientation="vertical",
@@ -37,14 +34,7 @@ class SettingsSystemScreen(Screen):
         )
         tools_card.bind(minimum_height=tools_card.setter("height"))
         tools_card.add_widget(self._section_label("Display and tools"))
-        tools_card.add_widget(self._body_label("Theme and device checks."))
-
-        self.theme_toggle = self._toggle_button(
-            self._theme_label(self.app.theme_mode),
-            self.app.theme_mode == "white",
-            self._toggle_theme,
-        )
-        tools_card.add_widget(self.theme_toggle)
+        tools_card.add_widget(self._body_label("Device checks and storage settings."))
 
         self.health_button = SecondaryButton(theme, text="Open device checks")
         self.health_button.size_hint_y = None
@@ -136,28 +126,7 @@ class SettingsSystemScreen(Screen):
         label.bind(size=lambda *_: setattr(label, "text_size", label.size))
         return label
 
-    def _toggle_button(self, text: str, enabled: bool, handler) -> ToggleButton:
-        button = ToggleButton(
-            text=text,
-            state="down" if enabled else "normal",
-            size_hint_y=None,
-            height=self.theme.button_height,
-            background_normal="",
-            background_color=self.theme.palette.surface_alt,
-            color=self.theme.palette.text,
-        )
-        button.bind(on_press=handler)
-        return button
-
-    def _toggle_theme(self, _instance) -> None:
-        if self.theme_toggle.state == "down":
-            self._pending_theme_mode = "white"
-        else:
-            self._pending_theme_mode = "light"
-        self.theme_toggle.text = self._theme_label(self._pending_theme_mode)
-
     def _save(self) -> None:
-        self.app.set_theme(self._pending_theme_mode)
         self.app.persist_settings()
 
     def _reset(self) -> None:
@@ -165,13 +134,4 @@ class SettingsSystemScreen(Screen):
         self.refresh()
 
     def refresh(self) -> None:
-        self._pending_theme_mode = self.app.theme_mode
-        self.theme_toggle.state = "down" if self.app.theme_mode == "white" else "normal"
-        self.theme_toggle.text = self._theme_label(self.app.theme_mode)
-
-    def _theme_label(self, mode: str) -> str:
-        if mode == "white":
-            return "Theme: White"
-        if mode == "dark":
-            return "Theme: Dark"
-        return "Theme: Light"
+        return None

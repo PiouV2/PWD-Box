@@ -53,30 +53,11 @@ LIGHT_PALETTE = Palette(
     divider=(0.75, 0.78, 0.82, 1),
 )
 
-WHITE_PALETTE = Palette(
-    background=(1, 1, 1, 1),
-    surface=(0.98, 0.98, 0.98, 1),
-    surface_alt=(0.93, 0.94, 0.96, 1),
-    text=(0.1, 0.12, 0.15, 1),
-    text_dim=(0.38, 0.41, 0.45, 1),
-    accent=(0.12, 0.48, 0.68, 1),
-    accent_alt=(0.16, 0.62, 0.36, 1),
-    success=(0.18, 0.62, 0.36, 1),
-    warning=(0.78, 0.5, 0.14, 1),
-    danger=(0.82, 0.24, 0.26, 1),
-    divider=(0.82, 0.84, 0.88, 1),
-)
-
 
 class Theme:
     def __init__(self, mode: str = "dark") -> None:
         self.mode = mode
-        if mode == "white":
-            self.palette = WHITE_PALETTE
-        elif mode == "light":
-            self.palette = LIGHT_PALETTE
-        else:
-            self.palette = DARK_PALETTE
+        self.palette = DARK_PALETTE if mode == "dark" else LIGHT_PALETTE
         self.scale = self._calculate_scale()
 
         self.h1 = self.sp(20)
@@ -112,7 +93,4 @@ class Theme:
 
 
 def resolve_theme(mode: str) -> Theme:
-    normalized = (mode or "dark").strip().lower()
-    if normalized in {"white", "light", "dark"}:
-        return Theme(mode=normalized)
-    return Theme(mode="dark")
+    return Theme(mode=mode)

@@ -40,7 +40,7 @@ class PWDBoxApp(App):
         self.controller = MonitorController(self.app_config, self.event_queue)
         self.db_path = str(init_db(self.app_config.storage.db_path))
         self.state = AppState()
-        self.theme_mode = "white"
+        self.theme_mode = "dark"
         self.theme = resolve_theme(self.theme_mode)
         self.interface_choice = self.app_config.capture.interface or "wlan1"
         self.battery_monitor = build_battery_monitor(demo=self.demo)
@@ -77,7 +77,7 @@ class PWDBoxApp(App):
         self.app_config.capture.enable_monitor = bool(
             get_setting("enable_monitor", self.app_config.capture.enable_monitor, db_path=self.db_path)
         )
-        self.theme_mode = get_setting("theme_mode", "white", db_path=self.db_path)
+        self.theme_mode = get_setting("theme_mode", "dark", db_path=self.db_path)
         self.app_config.evidence.pcap_enabled = bool(
             get_setting("pcap_enabled", self.app_config.evidence.pcap_enabled, db_path=self.db_path)
         )
