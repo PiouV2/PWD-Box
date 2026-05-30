@@ -13,6 +13,7 @@ class SettingsSystemScreen(Screen):
         super().__init__(name="settings_system", **kwargs)
         self.app = app
         self.theme = theme
+        self._pending_theme_mode = self.app.theme_mode or "dark"
 
         root = BoxLayout(
             orientation="vertical",
@@ -35,6 +36,12 @@ class SettingsSystemScreen(Screen):
         tools_card.bind(minimum_height=tools_card.setter("height"))
         tools_card.add_widget(self._section_label("Display and tools"))
         tools_card.add_widget(self._body_label("Device checks and storage settings."))
+
+        self.theme_button = SecondaryButton(theme, text=self._theme_button_text())
+        self.theme_button.size_hint_y = None
+        self.theme_button.height = theme.button_height
+        self.theme_button.bind(on_press=lambda *_: self._toggle_theme())
+        tools_card.add_widget(self.theme_button)
 
         self.health_button = SecondaryButton(theme, text="Open device checks")
         self.health_button.size_hint_y = None
@@ -127,11 +134,22 @@ class SettingsSystemScreen(Screen):
         return label
 
     def _save(self) -> None:
+        self.app.set_theme(self._pending_theme_mode)
         self.app.persist_settings()
 
     def _reset(self) -> None:
         self.app.reload_settings()
         self.refresh()
 
+    def _theme_button_text(self) -> str:
+        if self._pending_theme_mode == "dark":
+            return "Theme: Dark (tap for Light)"
+        return "Theme: Light (tap for Dark)"
+
+    def _toggle_theme(self) -> None:
+        self._pending_theme_mode = "light" if self._pending_theme_mode == "dark" else "dark"
+        self.theme_button.text = self._theme_button_text()
+
     def refresh(self) -> None:
-        return None
+        self._pending_theme_mode = self.app.theme_mode or "dark"
+        self.theme_button.text = self._theme_button_text()
