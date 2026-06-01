@@ -6,7 +6,7 @@ from pwdbox.models import DeauthEvent
 
 def test_parse_beacon_extracts_ssid() -> None:
     pkt = (
-        RadioTap()
+        RadioTap(dBm_AntSignal=-40)
         / Dot11(
             type=0,
             subtype=8,
@@ -17,7 +17,6 @@ def test_parse_beacon_extracts_ssid() -> None:
         / Dot11Beacon()
         / Dot11Elt(ID="SSID", info=b"TestNet")
     )
-    setattr(pkt, "dBm_AntSignal", -40)
 
     event = parse_packet(pkt)
     assert event is not None

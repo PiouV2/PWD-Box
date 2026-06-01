@@ -29,12 +29,13 @@ def _extract_ssid(pkt) -> Optional[str]:
 
 def _extract_rssi(pkt) -> Optional[int]:
     try:
-        if hasattr(pkt, "dBm_AntSignal"):
-            return int(getattr(pkt, "dBm_AntSignal"))
         if pkt.haslayer(RadioTap):
             radiotap = pkt.getlayer(RadioTap)
-            if hasattr(radiotap, "dBm_AntSignal"):
-                return int(getattr(radiotap, "dBm_AntSignal"))
+            # getattr goes through ConditionalField and may return None even when
+            # the value is set; read from the fields dict directly.
+            val = radiotap.fields.get("dBm_AntSignal")
+            if val is not None:
+                return int(val)
     except Exception:
         return None
     return None
