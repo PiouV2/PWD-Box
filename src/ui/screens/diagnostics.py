@@ -10,11 +10,9 @@ from kivy.uix.recycleboxlayout import RecycleBoxLayout
 from kivy.uix.recycleview import RecycleView
 from kivy.uix.recycleview.views import RecycleDataViewBehavior
 from kivy.uix.screenmanager import Screen
-from kivy.uix.textinput import TextInput
-
 from ..components import Card, PrimaryButton
 from ..theme import Theme
-from ...health import format_results, run_health_check
+from ...health import run_health_check
 
 
 class ResultRow(RecycleDataViewBehavior, BoxLayout):
@@ -54,15 +52,6 @@ class DiagnosticsScreen(Screen):
         header.add_widget(self.run_button)
         root.add_widget(header)
 
-        hint = Label(
-            text="Checks permissions, Wi-Fi adapter, packages, and battery status.",
-            color=theme.palette.text_dim,
-            font_size=theme.caption,
-            size_hint_y=None,
-            height=theme.dp(18),
-        )
-        root.add_widget(hint)
-
         list_card = Card(theme, orientation="vertical", padding=theme.gap_s, spacing=theme.gap_s)
         self.results_view = RecycleView()
         ResultRow.theme_ref = theme
@@ -77,16 +66,6 @@ class DiagnosticsScreen(Screen):
         root.add_widget(list_card)
         self.results_view.data = [{"text": "Run device checks to view status"}]
 
-        self.details = TextInput(
-            text="",
-            readonly=True,
-            size_hint_y=None,
-            height=theme.dp(120),
-            background_color=theme.palette.surface_alt,
-            foreground_color=theme.palette.text,
-        )
-        root.add_widget(self.details)
-
         self.add_widget(root)
 
     def run_checks(self) -> None:
@@ -100,11 +79,9 @@ class DiagnosticsScreen(Screen):
     def _run(self) -> None:
         results = run_health_check(self.app.app_config, interface=self.app.interface_choice)
         lines = [f"[{ 'PASS' if r.ok else 'FAIL' }] {r.name}: {r.details}" for r in results]
-        details = format_results(results)
-        Clock.schedule_once(lambda *_: self._update(lines, details), 0)
+        Clock.schedule_once(lambda *_: self._update(lines), 0)
 
-    def _update(self, lines: List[str], details: str) -> None:
+    def _update(self, lines: List[str]) -> None:
         self.results_view.data = [{"text": line} for line in lines]
-        self.details.text = details
         self.run_button.text = "Run device checks"
         self._busy = False
