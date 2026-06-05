@@ -5,7 +5,8 @@ PWD-Box is a passive-only wireless watchdog. It listens to 802.11 management tra
 
 ## Demo
 
-<img width="8064" height="4536" alt="IMG_3783" src="https://github.com/user-attachments/assets/02507b3a-022a-4d14-a424-bd7d6f80918a" />
+<img width="8064" height="4536" alt="compressed_image" src="https://github.com/user-attachments/assets/eaaa7738-88e2-4c5a-ae74-b14ab18348f4" />
+
 
 ![Dashboard monitoring demo](docs/media/dashboard-monitoring.gif)
 *Suggested clip: start monitoring, dashboard status updates, evidence recording active.*
