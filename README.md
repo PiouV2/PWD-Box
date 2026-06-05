@@ -204,6 +204,8 @@ UPS to Raspberry Pi wiring:
 | SCL | SCL | Orange |
 | SDA | SDA | Yellow |
 
+<img width="468" height="322" alt="image" src="https://github.com/user-attachments/assets/e5b3c935-dbca-44e6-a305-978d6bda0aa6" />
+
 ## Configuration
 
 Default configuration lives in `config/default.yaml`.
