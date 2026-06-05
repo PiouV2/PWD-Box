@@ -193,6 +193,17 @@ Evidence behavior:
 - when an alert triggers, a short alert-centered PCAP snapshot is also saved
 - retention limits bound PCAP count and total disk usage
 
+## SCL Wiring UPS
+
+UPS to Raspberry Pi wiring:
+
+| UPS | RPi | Wire color |
+| --- | --- | --- |
+| 5V | 5V | Red |
+| GND | GND | Brown |
+| SCL | SCL | Orange |
+| SDA | SDA | Yellow |
+
 ## Configuration
 
 Default configuration lives in `config/default.yaml`.
