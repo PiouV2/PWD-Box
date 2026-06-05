@@ -1,8 +1,11 @@
+"""Deauth detector tests."""
+
 from pwdbox.detection.deauth_detector import DeauthDetector
 from pwdbox.models import DeauthEvent
 
 
 def _event(ts: float) -> DeauthEvent:
+    """Create a deauth event with a fixed key."""
     return DeauthEvent(
         timestamp=ts,
         monotonic_ts=ts,
@@ -19,6 +22,7 @@ def _event(ts: float) -> DeauthEvent:
 
 
 def test_threshold_triggers_alert() -> None:
+    """Alert triggers once threshold is reached."""
     detector = DeauthDetector(threshold=3, window_seconds=5, cooldown_seconds=10)
     assert detector.process(_event(1)) is None
     assert detector.process(_event(2)) is None
@@ -28,6 +32,7 @@ def test_threshold_triggers_alert() -> None:
 
 
 def test_cooldown_blocks_repeats() -> None:
+    """Cooldown prevents alerts from firing too frequently."""
     detector = DeauthDetector(threshold=3, window_seconds=5, cooldown_seconds=10)
     detector.process(_event(1))
     detector.process(_event(2))

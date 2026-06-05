@@ -1,3 +1,5 @@
+"""CLI helper to run health checks outside the main app."""
+
 from __future__ import annotations
 
 import argparse
@@ -12,6 +14,7 @@ from pwdbox.health import format_results, run_health_check
 
 
 def main() -> int:
+    """Run health checks and return an exit code."""
     parser = argparse.ArgumentParser(description="PWD-Box environment validation")
     parser.add_argument(
         "--config",

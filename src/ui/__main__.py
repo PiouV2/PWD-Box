@@ -1,3 +1,5 @@
+"""Module entry point for launching the UI."""
+
 from __future__ import annotations
 
 from .app import run_ui

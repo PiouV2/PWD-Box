@@ -1,3 +1,5 @@
+"""Network settings screen."""
+
 from __future__ import annotations
 
 from typing import List
@@ -15,7 +17,10 @@ from ...health import list_wireless_interfaces
 
 
 class SettingsNetworkScreen(Screen):
+    """Screen for choosing adapter and monitor mode."""
+
     def __init__(self, app, theme: Theme, **kwargs) -> None:
+        """Build the network settings layout."""
         super().__init__(name="settings_network", **kwargs)
         self.app = app
         self.theme = theme
@@ -79,6 +84,7 @@ class SettingsNetworkScreen(Screen):
         self.add_widget(root)
 
     def _header(self, title: str) -> BoxLayout:
+        """Create a back header row."""
         row = BoxLayout(orientation="horizontal", size_hint_y=None, height=self.theme.nav_height, spacing=self.theme.gap_s)
         back = SecondaryButton(self.theme, text="Back")
         back.size_hint_x = 0.2
@@ -90,10 +96,12 @@ class SettingsNetworkScreen(Screen):
         return row
 
     def _section_label(self, text: str) -> Label:
+        """Return a section title label."""
         label = Label(text=text, color=self.theme.palette.text, font_size=self.theme.h3, size_hint_y=None, height=self.theme.dp(20))
         return label
 
     def _body_label(self, text: str) -> Label:
+        """Return a helper text label."""
         label = Label(
             text=text,
             color=self.theme.palette.text_dim,
@@ -107,6 +115,7 @@ class SettingsNetworkScreen(Screen):
         return label
 
     def _field(self, label_text: str, widget) -> BoxLayout:
+        """Create a labeled field container."""
         layout = BoxLayout(orientation="vertical", size_hint_y=None, height=self.theme.dp(64), spacing=self.theme.gap_xs)
         label = Label(
             text=label_text,
@@ -123,6 +132,7 @@ class SettingsNetworkScreen(Screen):
         return layout
 
     def _toggle_button(self, text: str, enabled: bool, handler) -> ToggleButton:
+        """Create a toggle button with the theme style."""
         button = ToggleButton(
             text=text,
             state="down" if enabled else "normal",
@@ -136,6 +146,7 @@ class SettingsNetworkScreen(Screen):
         return button
 
     def _interface_values(self) -> List[str]:
+        """Return available wireless interfaces for the spinner."""
         values = []
         for name in list_wireless_interfaces():
             if name and name not in values:
@@ -145,11 +156,13 @@ class SettingsNetworkScreen(Screen):
         return values or ["wlan1"]
 
     def _toggle_monitor(self, _instance) -> None:
+        """Toggle auto-enable monitor mode in config."""
         enabled = self.monitor_toggle.state == "down"
         self.monitor_toggle.text = "Listening mode: Auto-enable" if enabled else "Listening mode: Validate only"
         self.app.app_config.capture.enable_monitor = enabled
 
     def _save(self) -> None:
+        """Persist network settings."""
         interface = (self.interface_spinner.text or "").strip() or "wlan1"
         self._pending_interface = interface
         self.app.interface_choice = interface
@@ -157,10 +170,12 @@ class SettingsNetworkScreen(Screen):
         self.app.persist_settings()
 
     def _reset(self) -> None:
+        """Reload settings and refresh fields."""
         self.app.reload_settings()
         self.refresh()
 
     def refresh(self) -> None:
+        """Refresh UI widgets from current config values."""
         self._pending_interface = self.app.interface_choice
         self.interface_spinner.values = self._interface_values()
         self.interface_spinner.text = self._pending_interface

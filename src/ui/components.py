@@ -1,3 +1,5 @@
+"""Reusable UI components for the Kivy app."""
+
 from __future__ import annotations
 
 from typing import Optional
@@ -15,10 +17,13 @@ from .theme import Theme
 
 
 class Card(BoxLayout):
+    """Surface container with a rounded background."""
+
     background_color = ListProperty([0.15, 0.16, 0.2, 1])
     radius = ListProperty([8, 8, 8, 8])
 
     def __init__(self, theme: Theme, **kwargs) -> None:
+        """Create a card with theme colors and rounded corners."""
         super().__init__(**kwargs)
         self.theme = theme
         self.background_color = list(theme.palette.surface)
@@ -30,18 +35,24 @@ class Card(BoxLayout):
         self.bind(background_color=self._sync_color, radius=self._sync_radius)
 
     def _sync_rect(self, *_args) -> None:
+        """Keep the background rectangle aligned with layout."""
         self._rect.pos = self.pos
         self._rect.size = self.size
 
     def _sync_color(self, *_args) -> None:
+        """Update the background color from the property."""
         self._color.rgba = self.background_color
 
     def _sync_radius(self, *_args) -> None:
+        """Update the background corner radius."""
         self._rect.radius = self.radius
 
 
 class PrimaryButton(Button):
+    """Primary action button."""
+
     def __init__(self, theme: Theme, **kwargs) -> None:
+        """Create a primary button with theme styling."""
         super().__init__(**kwargs)
         self.theme = theme
         self.size_hint_y = None
@@ -53,7 +64,10 @@ class PrimaryButton(Button):
 
 
 class SecondaryButton(Button):
+    """Secondary action button."""
+
     def __init__(self, theme: Theme, **kwargs) -> None:
+        """Create a secondary button with theme styling."""
         super().__init__(**kwargs)
         self.theme = theme
         self.size_hint_y = None
@@ -71,6 +85,7 @@ class BigNavButton(ButtonBehavior, BoxLayout):
     subtitle = StringProperty("")
 
     def __init__(self, theme: Theme, **kwargs) -> None:
+        """Create a two-line navigation button."""
         super().__init__(orientation="vertical", size_hint_y=None, height=theme.dp(76), **kwargs)
         self.theme = theme
         self.padding = [theme.gap_m, theme.gap_s, theme.gap_m, theme.gap_s]
@@ -105,21 +120,27 @@ class BigNavButton(ButtonBehavior, BoxLayout):
         self.bind(subtitle=self._update_subtitle)
 
     def _sync_rect(self, *_args) -> None:
+        """Keep the background rectangle aligned with layout."""
         self._rect.pos = self.pos
         self._rect.size = self.size
 
     def _update_title(self, *_args) -> None:
+        """Refresh the title text."""
         self.title_label.text = self.title
 
     def _update_subtitle(self, *_args) -> None:
+        """Refresh the subtitle text."""
         self.subtitle_label.text = self.subtitle
 
 
 class StatusChip(BoxLayout):
+    """Small status badge with tone colors."""
+
     text = StringProperty("")
     tone = StringProperty("neutral")
 
     def __init__(self, theme: Theme, **kwargs) -> None:
+        """Create a status chip with label and background."""
         super().__init__(orientation="horizontal", size_hint_y=None, height=theme.dp(24), **kwargs)
         self.theme = theme
         self.background_color = list(theme.palette.surface_alt)
@@ -134,13 +155,16 @@ class StatusChip(BoxLayout):
         self.bind(tone=self._update_tone)
 
     def _sync_rect(self, *_args) -> None:
+        """Keep the background rectangle aligned with layout."""
         self._rect.pos = self.pos
         self._rect.size = self.size
 
     def _update_text(self, *_args) -> None:
+        """Refresh the label text."""
         self.label.text = self.text
 
     def _update_tone(self, *_args) -> None:
+        """Update the background color for the tone."""
         palette = self.theme.palette
         if self.tone == "ok":
             color = palette.success
@@ -154,10 +178,13 @@ class StatusChip(BoxLayout):
 
 
 class BatteryStatusChip(BoxLayout):
+    """Compact battery status chip."""
+
     text = StringProperty("")
     tone = StringProperty("neutral")
 
     def __init__(self, theme: Theme, **kwargs) -> None:
+        """Create a battery chip with truncation support."""
         super().__init__(orientation="horizontal", size_hint_y=None, height=theme.dp(24), **kwargs)
         self.theme = theme
         self.background_color = list(theme.palette.surface_alt)
@@ -181,13 +208,16 @@ class BatteryStatusChip(BoxLayout):
         self.bind(tone=self._update_tone)
 
     def _sync_rect(self, *_args) -> None:
+        """Keep the background rectangle aligned with layout."""
         self._rect.pos = self.pos
         self._rect.size = self.size
 
     def _update_text(self, *_args) -> None:
+        """Refresh the label text."""
         self.label.text = self.text
 
     def _update_tone(self, *_args) -> None:
+        """Update the background color for the tone."""
         palette = self.theme.palette
         if self.tone == "ok":
             color = palette.accent_alt
@@ -198,12 +228,16 @@ class BatteryStatusChip(BoxLayout):
         self._color.rgba = color
 
     def set_snapshot(self, snapshot: BatterySnapshot) -> None:
+        """Update the chip from a battery snapshot."""
         self.text = format_battery_status(snapshot)
         self.tone = snapshot.tone
 
 
 class AlertBanner(Card):
+    """Banner used to highlight warnings or alerts."""
+
     def __init__(self, theme: Theme, **kwargs) -> None:
+        """Create a hidden banner that can be shown later."""
         super().__init__(theme, **kwargs)
         self.orientation = "horizontal"
         self.size_hint_y = None
@@ -214,6 +248,7 @@ class AlertBanner(Card):
         self.add_widget(self.message_label)
 
     def show(self, message: str, tone: str = "warn") -> None:
+        """Show the banner with a message and tone."""
         palette = self.theme.palette
         if tone == "error":
             self.background_color = list(palette.danger)
@@ -226,13 +261,17 @@ class AlertBanner(Card):
         self.opacity = 1
 
     def hide(self) -> None:
+        """Hide the banner and clear its text."""
         self.message_label.text = ""
         self.height = 0
         self.opacity = 0
 
 
 class HeaderBar(BoxLayout):
+    """Top bar with title, status, and battery info."""
+
     def __init__(self, theme: Theme, title: str, **kwargs) -> None:
+        """Create the header bar widgets."""
         super().__init__(orientation="horizontal", size_hint_y=None, height=theme.header_height, **kwargs)
         self.theme = theme
         self.padding = [theme.gap_m, theme.gap_s, theme.gap_m, theme.gap_s]
@@ -272,17 +311,21 @@ class HeaderBar(BoxLayout):
         self.add_widget(self.battery_chip)
 
     def _sync_rect(self, *_args) -> None:
+        """Keep the background rectangle aligned with layout."""
         self._rect.pos = self.pos
         self._rect.size = self.size
 
     def update_status(self, text: str, tone: str) -> None:
+        """Update the status chip text and tone."""
         self.status_chip.text = text
         self.status_chip.tone = tone
 
     def update_battery(self, snapshot: BatterySnapshot) -> None:
+        """Update the battery chip from a snapshot."""
         self.battery_chip.set_snapshot(snapshot)
 
     def set_message(self, message: Optional[str], tone: str = "warn") -> None:
+        """Update the message text and color."""
         palette = self.theme.palette
         if tone == "error":
             color = palette.danger
@@ -297,7 +340,10 @@ class HeaderBar(BoxLayout):
 
 
 class FooterNav(BoxLayout):
+    """Bottom navigation bar for primary screens."""
+
     def __init__(self, theme: Theme, screen_manager, **kwargs) -> None:
+        """Create navigation buttons bound to screen names."""
         super().__init__(orientation="horizontal", size_hint_y=None, height=theme.nav_height, **kwargs)
         self.theme = theme
         self.padding = [theme.gap_s, theme.gap_s, theme.gap_s, theme.gap_s]
@@ -323,10 +369,12 @@ class FooterNav(BoxLayout):
             self.add_widget(button)
 
     def _sync_rect(self, *_args) -> None:
+        """Keep the background rectangle aligned with layout."""
         self._rect.pos = self.pos
         self._rect.size = self.size
 
     def _make_handler(self, name: str):
+        """Return a click handler that switches screens."""
         def _handler(_instance):
             self._screen_manager.current = name
 

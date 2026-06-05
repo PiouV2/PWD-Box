@@ -1,3 +1,5 @@
+"""Setup guide screen for first run."""
+
 from __future__ import annotations
 
 from kivy.uix.boxlayout import BoxLayout
@@ -10,7 +12,10 @@ from ..theme import Theme
 
 
 class SetupScreen(Screen):
+    """Screen with guided setup steps."""
+
     def __init__(self, app, theme: Theme, **kwargs) -> None:
+        """Build the setup guide layout."""
         super().__init__(name="setup", **kwargs)
         self.app = app
         self.theme = theme
@@ -107,6 +112,7 @@ class SetupScreen(Screen):
         self.add_widget(root)
 
     def _header(self, title: str) -> BoxLayout:
+        """Create a back header row."""
         row = BoxLayout(
             orientation="horizontal",
             size_hint_y=None,
@@ -123,6 +129,7 @@ class SetupScreen(Screen):
         return row
 
     def _section_label(self, text: str) -> Label:
+        """Return a section title label."""
         return Label(
             text=text,
             color=self.theme.palette.text,
@@ -132,6 +139,7 @@ class SetupScreen(Screen):
         )
 
     def _body_label(self, text: str) -> Label:
+        """Return a helper text label."""
         label = Label(
             text=text,
             color=self.theme.palette.text_dim,
@@ -145,16 +153,20 @@ class SetupScreen(Screen):
         return label
 
     def _interface_text(self) -> str:
+        """Return the active interface label."""
         iface = self.app.interface_choice or "-"
         return f"Current adapter: {iface}"
 
     def _start_monitoring(self) -> None:
+        """Start monitoring and return to dashboard."""
         self.app.start_monitoring()
         self.app.show_screen("dashboard")
 
     def _finish_setup(self) -> None:
+        """Mark setup complete and return to dashboard."""
         self.app.mark_setup_complete()
         self.app.show_screen("dashboard")
 
     def refresh(self) -> None:
+        """Refresh the interface label."""
         self.interface_label.text = self._interface_text()

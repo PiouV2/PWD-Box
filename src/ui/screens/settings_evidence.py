@@ -1,3 +1,5 @@
+"""Evidence settings screen."""
+
 from __future__ import annotations
 
 from kivy.uix.boxlayout import BoxLayout
@@ -12,7 +14,10 @@ from ..widgets import Stepper
 
 
 class SettingsEvidenceScreen(Screen):
+    """Screen for PCAP capture and retention settings."""
+
     def __init__(self, app, theme: Theme, **kwargs) -> None:
+        """Build the evidence settings layout."""
         super().__init__(name="settings_evidence", **kwargs)
         self.app = app
         self.theme = theme
@@ -93,6 +98,7 @@ class SettingsEvidenceScreen(Screen):
         self.add_widget(root)
 
     def _header(self, title: str) -> BoxLayout:
+        """Create a back header row."""
         row = BoxLayout(orientation="horizontal", size_hint_y=None, height=self.theme.nav_height, spacing=self.theme.gap_s)
         back = SecondaryButton(self.theme, text="Back")
         back.size_hint_x = 0.2
@@ -104,10 +110,12 @@ class SettingsEvidenceScreen(Screen):
         return row
 
     def _section_label(self, text: str) -> Label:
+        """Return a section title label."""
         label = Label(text=text, color=self.theme.palette.text, font_size=self.theme.h3, size_hint_y=None, height=self.theme.dp(20))
         return label
 
     def _body_label(self, text: str) -> Label:
+        """Return a helper text label."""
         label = Label(
             text=text,
             color=self.theme.palette.text_dim,
@@ -121,6 +129,7 @@ class SettingsEvidenceScreen(Screen):
         return label
 
     def _field(self, label_text: str, widget) -> BoxLayout:
+        """Create a labeled field container."""
         layout = BoxLayout(orientation="vertical", size_hint_y=None, height=self.theme.dp(64), spacing=self.theme.gap_xs)
         label = Label(
             text=label_text,
@@ -137,6 +146,7 @@ class SettingsEvidenceScreen(Screen):
         return layout
 
     def _value_label(self, value: str) -> Label:
+        """Return a value label used in read-only fields."""
         label = Label(
             text=value,
             color=self.theme.palette.text,
@@ -150,6 +160,7 @@ class SettingsEvidenceScreen(Screen):
         return label
 
     def _toggle_button(self, text: str, enabled: bool, handler) -> ToggleButton:
+        """Create a toggle button with the theme style."""
         button = ToggleButton(
             text=text,
             state="down" if enabled else "normal",
@@ -163,30 +174,38 @@ class SettingsEvidenceScreen(Screen):
         return button
 
     def _pcap_path(self) -> str:
+        """Return the configured evidence path for display."""
         return self.app.app_config.evidence.pcap_dir or "data/pcaps"
 
     def _toggle_pcap(self, _instance) -> None:
+        """Toggle evidence capture in the config."""
         enabled = self.pcap_toggle.state == "down"
         self.pcap_toggle.text = "Packet capture: ON" if enabled else "Packet capture: OFF"
         self.app.app_config.evidence.pcap_enabled = enabled
 
     def _update_buffer(self, value: int) -> None:
+        """Update the buffer window in config."""
         self.app.app_config.evidence.pcap_buffer_seconds = float(value)
 
     def _update_max_files(self, value: int) -> None:
+        """Update max file count in config."""
         self.app.app_config.evidence.pcap_max_files = int(value)
 
     def _update_max_mb(self, value: int) -> None:
+        """Update max total MB in config."""
         self.app.app_config.evidence.pcap_max_total_mb = int(value)
 
     def _save(self) -> None:
+        """Persist evidence settings."""
         self.app.persist_settings()
 
     def _reset(self) -> None:
+        """Reload settings and refresh fields."""
         self.app.reload_settings()
         self.refresh()
 
     def refresh(self) -> None:
+        """Refresh UI widgets from current config values."""
         self.pcap_toggle.state = "down" if self.app.app_config.evidence.pcap_enabled else "normal"
         self.pcap_toggle.text = "Packet capture: ON" if self.app.app_config.evidence.pcap_enabled else "Packet capture: OFF"
         self.buffer_stepper.value = int(self.app.app_config.evidence.pcap_buffer_seconds)

@@ -1,3 +1,5 @@
+"""Theme palette and sizing helpers for the UI."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -12,6 +14,7 @@ Color = Tuple[float, float, float, float]
 
 @dataclass(frozen=True)
 class Palette:
+    """Color palette used by UI components."""
     background: Color
     surface: Color
     surface_alt: Color
@@ -55,7 +58,10 @@ LIGHT_PALETTE = Palette(
 
 
 class Theme:
+    """Scaled typography and spacing based on window size."""
+
     def __init__(self, mode: str = "dark") -> None:
+        """Create theme metrics for the given mode."""
         self.mode = mode
         self.palette = DARK_PALETTE if mode == "dark" else LIGHT_PALETTE
         self.scale = self._calculate_scale()
@@ -81,16 +87,20 @@ class Theme:
         self.banner_height = self.dp(32)
 
     def _calculate_scale(self) -> float:
+        """Compute a scale factor from the window size."""
         width = max(Window.width, 1)
         height = max(Window.height, 1)
         return min(width / 800.0, height / 480.0)
 
     def dp(self, value: float) -> float:
+        """Scale dp units by the current theme scale."""
         return dp(value * self.scale)
 
     def sp(self, value: float) -> float:
+        """Scale font sizes by the current theme scale."""
         return sp(value * self.scale)
 
 
 def resolve_theme(mode: str) -> Theme:
+    """Return a theme instance for the requested mode."""
     return Theme(mode=mode)

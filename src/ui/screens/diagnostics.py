@@ -1,3 +1,5 @@
+"""Diagnostics screen for device checks."""
+
 from __future__ import annotations
 
 import threading
@@ -13,7 +15,10 @@ from ...health import format_results, run_health_check
 
 
 class DiagnosticsScreen(Screen):
+    """Screen that runs and displays health checks."""
+
     def __init__(self, app, theme: Theme, **kwargs) -> None:
+        """Build the diagnostics layout."""
         super().__init__(name="diagnostics", **kwargs)
         self.app = app
         self.theme = theme
@@ -44,6 +49,7 @@ class DiagnosticsScreen(Screen):
         self.add_widget(root)
 
     def run_checks(self) -> None:
+        """Start health checks in a background thread."""
         if self._busy:
             return
         self._busy = True
@@ -52,11 +58,13 @@ class DiagnosticsScreen(Screen):
         thread.start()
 
     def _run(self) -> None:
+        """Run health checks and schedule UI update."""
         results = run_health_check(self.app.app_config, interface=self.app.interface_choice)
         text = format_results(results)
         Clock.schedule_once(lambda *_: self._update(text), 0)
 
     def _update(self, text: str) -> None:
+        """Update the output text and reset the UI."""
         self.output.text = text
         self.run_button.text = "Run device checks"
         self._busy = False

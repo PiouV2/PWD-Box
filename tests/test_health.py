@@ -1,3 +1,5 @@
+"""Health check tests."""
+
 from pathlib import Path
 
 import pytest
@@ -27,6 +29,7 @@ except ImportError:
 
 
 def _config(tmp_path: Path) -> Config:
+    """Build a test config pointing to temp paths."""
     return Config(
         capture=CaptureConfig(interface="wlan1"),
         scanner=ScannerConfig(),
@@ -38,6 +41,7 @@ def _config(tmp_path: Path) -> Config:
 
 
 def test_health_check_storage_directories_success(tmp_path: Path) -> None:
+    """Storage directories are created when writable."""
     cfg = _config(tmp_path)
     results = _check_storage_directories(cfg)
 
@@ -50,6 +54,7 @@ def test_health_check_storage_directories_success(tmp_path: Path) -> None:
 def test_health_check_storage_directories_failure_reports_error(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """Errors during mkdir are surfaced in results."""
     cfg = _config(tmp_path)
 
     def _boom(*_args, **_kwargs):

@@ -1,3 +1,5 @@
+"""Pytest configuration for import paths."""
+
 from pathlib import Path
 import sys
 

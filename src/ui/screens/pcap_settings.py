@@ -1,3 +1,5 @@
+"""Legacy PCAP settings screen."""
+
 from __future__ import annotations
 
 from kivy.uix.boxlayout import BoxLayout
@@ -12,7 +14,10 @@ from ..widgets import Stepper
 
 
 class PcapSettingsScreen(Screen):
+    """Screen for tuning PCAP capture settings."""
+
     def __init__(self, app, theme: Theme, **kwargs) -> None:
+        """Build the PCAP settings layout."""
         super().__init__(name="pcap_settings", **kwargs)
         self.app = app
         self.theme = theme
@@ -87,6 +92,7 @@ class PcapSettingsScreen(Screen):
         self.add_widget(root)
 
     def _body_label(self, text: str) -> Label:
+        """Return a helper text label."""
         label = Label(
             text=text,
             color=self.theme.palette.text_dim,
@@ -100,6 +106,7 @@ class PcapSettingsScreen(Screen):
         return label
 
     def _toggle_button(self, text: str, enabled: bool, handler) -> ToggleButton:
+        """Create a toggle button with the theme style."""
         button = ToggleButton(
             text=text,
             state="down" if enabled else "normal",
@@ -113,20 +120,25 @@ class PcapSettingsScreen(Screen):
         return button
 
     def _toggle_pcap(self, _instance) -> None:
+        """Toggle PCAP capture in config."""
         enabled = self.pcap_toggle.state == "down"
         self.pcap_toggle.text = "PCAP capture: ON" if enabled else "PCAP capture: OFF"
         self.app.app_config.evidence.pcap_enabled = enabled
 
     def _update_buffer(self, value: int) -> None:
+        """Update buffer size in config."""
         self.app.app_config.evidence.pcap_buffer_seconds = float(value)
 
     def _update_max_files(self, value: int) -> None:
+        """Update max file count in config."""
         self.app.app_config.evidence.pcap_max_files = int(value)
 
     def _update_max_mb(self, value: int) -> None:
+        """Update max total MB in config."""
         self.app.app_config.evidence.pcap_max_total_mb = int(value)
 
     def refresh(self) -> None:
+        """Refresh UI widgets from current config values."""
         self.pcap_toggle.state = "down" if self.app.app_config.evidence.pcap_enabled else "normal"
         self.pcap_toggle.text = "PCAP capture: ON" if self.app.app_config.evidence.pcap_enabled else "PCAP capture: OFF"
         self.buffer_stepper.value = int(self.app.app_config.evidence.pcap_buffer_seconds)

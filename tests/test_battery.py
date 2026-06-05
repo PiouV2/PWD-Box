@@ -1,3 +1,5 @@
+"""Battery unit tests."""
+
 from pwdbox.battery import (
     BatteryMonitor,
     BatterySnapshot,
@@ -8,6 +10,7 @@ from pwdbox.battery import (
 
 
 class _FakeDriver:
+    """Simple driver stub with fixed readings."""
     def __init__(self, voltage_v: float, current_ma: float) -> None:
         self._voltage_v = voltage_v
         self._current_ma = current_ma
@@ -20,6 +23,7 @@ class _FakeDriver:
 
 
 class _BrokenDriver:
+    """Driver stub that always fails."""
     def getBusVoltage_V(self) -> float:
         raise RuntimeError("sensor failed")
 
@@ -28,6 +32,7 @@ class _BrokenDriver:
 
 
 def test_estimate_battery_percentage_clamps_and_scales() -> None:
+    """Battery percentage clamps to expected range."""
     assert estimate_battery_percentage(8.5) == 0
     assert estimate_battery_percentage(9.0) == 0
     assert estimate_battery_percentage(10.8) == 50
@@ -36,6 +41,7 @@ def test_estimate_battery_percentage_clamps_and_scales() -> None:
 
 
 def test_format_current_and_status() -> None:
+    """Formatting helpers return expected strings."""
     snapshot = BatterySnapshot(
         available=True,
         percentage=75,
@@ -48,6 +54,7 @@ def test_format_current_and_status() -> None:
 
 
 def test_monitor_snapshot_uses_driver_readings() -> None:
+    """Monitor uses driver values when available."""
     monitor = BatteryMonitor(driver=_FakeDriver(voltage_v=11.7, current_ma=-86.2))
     snapshot = monitor.read_snapshot()
 
@@ -60,6 +67,7 @@ def test_monitor_snapshot_uses_driver_readings() -> None:
 
 
 def test_monitor_falls_back_when_driver_errors() -> None:
+    """Monitor returns unavailable snapshot on driver errors."""
     monitor = BatteryMonitor(driver=_BrokenDriver())
     snapshot = monitor.read_snapshot()
 

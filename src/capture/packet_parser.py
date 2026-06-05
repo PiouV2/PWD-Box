@@ -1,3 +1,5 @@
+"""Parse 802.11 management frames into lightweight events."""
+
 from __future__ import annotations
 
 import time
@@ -9,6 +11,7 @@ from ..models import DeauthEvent, FrameEvent
 
 
 def _extract_ssid(pkt) -> Optional[str]:
+    """Best-effort SSID extraction from Dot11 elements."""
     try:
         if not pkt.haslayer(Dot11Elt):
             return None
@@ -28,6 +31,7 @@ def _extract_ssid(pkt) -> Optional[str]:
 
 
 def _extract_rssi(pkt) -> Optional[int]:
+    """Best-effort RSSI extraction from Radiotap metadata."""
     try:
         if pkt.haslayer(RadioTap):
             radiotap = pkt.getlayer(RadioTap)
@@ -42,6 +46,7 @@ def _extract_rssi(pkt) -> Optional[int]:
 
 
 def parse_packet(pkt) -> Optional[FrameEvent]:
+    """Convert a raw packet into a frame or deauth event."""
     try:
         if pkt is None or not hasattr(pkt, "haslayer"):
             return None

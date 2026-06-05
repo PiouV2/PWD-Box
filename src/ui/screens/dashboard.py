@@ -1,3 +1,5 @@
+"""Dashboard screen showing session status and actions."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
@@ -13,7 +15,10 @@ from ..theme import Theme
 
 
 class DashboardScreen(Screen):
+    """Main dashboard for monitoring status and shortcuts."""
+
     def __init__(self, app, theme: Theme, **kwargs) -> None:
+        """Build the dashboard layout."""
         super().__init__(name="dashboard", **kwargs)
         self.app = app
         self.theme = theme
@@ -120,6 +125,7 @@ class DashboardScreen(Screen):
         value_widget: Optional[Label] = None,
         chip: Optional[StatusChip] = None,
     ) -> BoxLayout:
+        """Create a labeled row with a value or status chip."""
         row = BoxLayout(orientation="horizontal", spacing=self.theme.gap_s, size_hint_y=None, height=self.theme.dp(26))
         row.add_widget(Label(text=label, color=self.theme.palette.text_dim, font_size=self.theme.body, size_hint_x=0.55))
         if chip is not None:
@@ -131,6 +137,7 @@ class DashboardScreen(Screen):
         return row
 
     def update_status(self, status: Dict[str, Any], state_text: str, tone: str) -> None:
+        """Update status widgets from the runtime status dict."""
         self.monitoring_chip.text = state_text
         self.monitoring_chip.tone = tone
         interface = status.get("interface") or self.app.interface_choice or "-"
@@ -140,10 +147,12 @@ class DashboardScreen(Screen):
         self.logging_label.text = "ON" if evidence_active else "OFF"
 
     def update_alert_summary(self, last_alert_time: Optional[str], count: int) -> None:
+        """Update alert time and count labels."""
         self.last_alert_label.text = last_alert_time or "-"
         self.alert_count_label.text = str(count)
 
     def show_alert_banner(self, message: Optional[str], tone: str = "warn") -> None:
+        """Show or hide the alert banner."""
         if message:
             self.alert_banner.show(message, tone=tone)
         else:

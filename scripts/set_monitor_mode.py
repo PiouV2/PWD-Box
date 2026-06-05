@@ -1,3 +1,5 @@
+"""CLI helper to enable monitor mode on an interface."""
+
 from __future__ import annotations
 
 import argparse
@@ -11,6 +13,7 @@ from pwdbox.capture.wifi_sniffer import ensure_monitor_mode
 
 
 def main() -> int:
+    """Set monitor mode and return an exit code."""
     parser = argparse.ArgumentParser(
         description="Set a Wi-Fi interface to monitor mode for passive capture"
     )

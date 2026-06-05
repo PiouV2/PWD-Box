@@ -1,3 +1,5 @@
+"""CLI entry point for passive monitoring and UI."""
+
 from __future__ import annotations
 
 import argparse
@@ -20,6 +22,7 @@ except ImportError:
 
 
 def _build_parser() -> argparse.ArgumentParser:
+    """Build the argument parser for the CLI."""
     parser = argparse.ArgumentParser(description="PWD-Box passive monitoring CLI")
     parser.add_argument(
         "--config",
@@ -39,6 +42,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
+    """Run the CLI and return a process exit code."""
     parser = _build_parser()
     args = parser.parse_args(argv)
 

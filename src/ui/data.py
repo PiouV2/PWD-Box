@@ -1,3 +1,5 @@
+"""Demo data helpers for the UI."""
+
 from __future__ import annotations
 
 import random
@@ -6,6 +8,7 @@ from typing import Dict, List
 
 
 def demo_networks() -> List[Dict[str, object]]:
+    """Return a small list of fake network rows."""
     now = time.time()
     base = [
         {"ssid": "CafeNet", "bssid": "aa:bb:cc:dd:ee:01", "rssi": -42, "age_seconds": 2},
@@ -26,6 +29,7 @@ def demo_networks() -> List[Dict[str, object]]:
 
 
 def demo_alerts() -> List[Dict[str, object]]:
+    """Return a single fake alert row."""
     ts = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     return [
         {

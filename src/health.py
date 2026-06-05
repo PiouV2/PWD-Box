@@ -1,3 +1,5 @@
+"""Runtime health checks for environment readiness."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -15,6 +17,7 @@ from .battery_factory import build_battery_monitor
 
 @dataclass
 class CheckResult:
+    """Single health check outcome."""
     name: str
     ok: bool
     details: str
@@ -22,6 +25,7 @@ class CheckResult:
 
 
 def _run_cmd(command: List[str]) -> Tuple[str, str, int]:
+    """Run a command and return stdout, stderr, and exit code."""
     try:
         result = subprocess.run(
             command,
@@ -35,6 +39,7 @@ def _run_cmd(command: List[str]) -> Tuple[str, str, int]:
 
 
 def _parse_iw_interfaces(output: str) -> List[str]:
+    """Parse interface names from `iw dev` output."""
     interfaces: List[str] = []
     for line in output.splitlines():
         line = line.strip()
@@ -46,6 +51,7 @@ def _parse_iw_interfaces(output: str) -> List[str]:
 
 
 def list_wireless_interfaces() -> List[str]:
+    """Return wireless interface names from `iw dev`."""
     out, _, code = _run_cmd(["iw", "dev"])
     if code == 0:
         return _parse_iw_interfaces(out)
@@ -53,6 +59,7 @@ def list_wireless_interfaces() -> List[str]:
 
 
 def list_all_interfaces() -> List[str]:
+    """Return all interface names from `ip link`."""
     out, _, code = _run_cmd(["ip", "-o", "link", "show"])
     interfaces: List[str] = []
     if code != 0:
@@ -67,6 +74,7 @@ def list_all_interfaces() -> List[str]:
 
 
 def _check_python_version(min_major: int = 3, min_minor: int = 9) -> CheckResult:
+    """Validate the running Python version."""
     version = sys.version_info
     ok = (version.major, version.minor) >= (min_major, min_minor)
     details = f"{version.major}.{version.minor}.{version.micro}"
@@ -75,11 +83,13 @@ def _check_python_version(min_major: int = 3, min_minor: int = 9) -> CheckResult
 
 
 def _check_os() -> CheckResult:
+    """Report basic OS information."""
     details = f"{platform.system()} {platform.release()}"
     return CheckResult("Operating system", True, details)
 
 
 def _check_tools(tools: List[str]) -> List[CheckResult]:
+    """Check that required system tools are available."""
     results: List[CheckResult] = []
     for tool in tools:
         found = shutil.which(tool) is not None
@@ -90,6 +100,7 @@ def _check_tools(tools: List[str]) -> List[CheckResult]:
 
 
 def _check_packages() -> List[CheckResult]:
+    """Check for required Python packages."""
     results: List[CheckResult] = []
     try:
         import scapy  # noqa: F401
@@ -121,6 +132,7 @@ def _check_packages() -> List[CheckResult]:
 
 
 def _check_permissions() -> CheckResult:
+    """Ensure capture permissions are present."""
     ok = os.geteuid() == 0
     details = "root" if ok else "not root"
     fix = None
@@ -130,10 +142,12 @@ def _check_permissions() -> CheckResult:
 
 
 def _resolve_repo_root() -> Path:
+    """Resolve the repo root from this file location."""
     return Path(__file__).resolve().parents[2]
 
 
 def _resolve_storage_path(raw_path: Optional[str], default_rel_path: str) -> Path:
+    """Resolve a storage path to an absolute location."""
     candidate = Path(raw_path) if raw_path else Path(default_rel_path)
     if candidate.is_absolute():
         return candidate
@@ -141,6 +155,7 @@ def _resolve_storage_path(raw_path: Optional[str], default_rel_path: str) -> Pat
 
 
 def _check_storage_directories(config: Optional[Config]) -> List[CheckResult]:
+    """Validate that storage directories exist and are writable."""
     results: List[CheckResult] = []
     db_path = _resolve_storage_path(
         config.storage.db_path if config else None,
@@ -171,6 +186,7 @@ def _check_storage_directories(config: Optional[Config]) -> List[CheckResult]:
 
 
 def _check_interfaces(config: Optional[Config], interface: Optional[str]) -> List[CheckResult]:
+    """Validate that capture interfaces are present."""
     results: List[CheckResult] = []
     wireless = list_wireless_interfaces()
     all_ifaces = list_all_interfaces()
@@ -206,6 +222,7 @@ def _check_interfaces(config: Optional[Config], interface: Optional[str]) -> Lis
 def run_health_check(
     config: Optional[Config] = None, interface: Optional[str] = None
 ) -> List[CheckResult]:
+    """Run all health checks and return the results."""
     results: List[CheckResult] = []
     results.append(_check_os())
     results.append(_check_python_version())
@@ -232,6 +249,7 @@ def run_health_check(
 
 
 def format_results(results: List[CheckResult]) -> str:
+    """Format health check results as plain text."""
     lines: List[str] = []
     for result in results:
         status = "PASS" if result.ok else "FAIL"

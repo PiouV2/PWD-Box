@@ -1,3 +1,5 @@
+"""PCAP buffering, capture, and retention helpers."""
+
 from __future__ import annotations
 
 from collections import deque
@@ -13,20 +15,26 @@ DEFAULT_LINKTYPE = 127
 
 
 class PcapBuffer:
+    """Keep a rolling packet buffer for alert evidence."""
+
     def __init__(self, max_seconds: float, max_packets: int) -> None:
+        """Set buffer limits and initialize storage."""
         self.max_seconds = max(max_seconds, 1.0)
         self.max_packets = max(max_packets, 1)
         self._packets: Deque[Tuple[float, object]] = deque()
 
     def add(self, pkt, timestamp: Optional[float] = None) -> None:
+        """Add a packet and prune to the configured limits."""
         ts = timestamp if timestamp is not None else float(getattr(pkt, "time", time.time()))
         self._packets.append((ts, pkt))
         self._prune(ts)
 
     def snapshot(self) -> List[object]:
+        """Return a list of buffered packets."""
         return [pkt for _, pkt in self._packets]
 
     def _prune(self, now: float) -> None:
+        """Drop packets outside the time or size window."""
         cutoff = now - self.max_seconds
         while self._packets and self._packets[0][0] < cutoff:
             self._packets.popleft()
@@ -35,7 +43,10 @@ class PcapBuffer:
 
 
 class SessionPcapCapture:
+    """Write all session traffic to a single PCAP file."""
+
     def __init__(self, pcap_dir: Optional[str] = None, linktype: int = DEFAULT_LINKTYPE) -> None:
+        """Prepare the capture output path and linktype."""
         self._pcap_dir = pcap_dir
         self._linktype = linktype
         self._writer: Optional[PcapWriter] = None
@@ -43,6 +54,7 @@ class SessionPcapCapture:
 
     @property
     def is_active(self) -> bool:
+        """Return True when a writer and output path are ready."""
         return self._writer is not None and self.path is not None
 
     def start(
@@ -50,6 +62,7 @@ class SessionPcapCapture:
         session_id: int,
         timestamp: Optional[float] = None,
     ) -> Path:
+        """Open a new PCAP file for the given session."""
         if self.path is not None:
             return self.path
 
@@ -71,11 +84,13 @@ class SessionPcapCapture:
         return output_path
 
     def write(self, pkt) -> None:
+        """Append a packet to the session PCAP."""
         if self._writer is None:
             return
         self._writer.write(pkt)
 
     def stop(self) -> Optional[Path]:
+        """Close the PCAP writer and return the file path."""
         writer = self._writer
         self._writer = None
         if writer is not None:
@@ -84,6 +99,7 @@ class SessionPcapCapture:
 
 
 def resolve_pcap_dir(pcap_dir: Optional[str]) -> Path:
+    """Resolve a PCAP directory to an absolute path."""
     path = Path(pcap_dir) if pcap_dir else DEFAULT_PCAP_DIR
     if not path.is_absolute():
         path = PROJECT_ROOT / path
@@ -97,6 +113,7 @@ def save_pcap_for_alert(
     pcap_dir: Optional[str] = None,
     timestamp: Optional[float] = None,
 ) -> Optional[Path]:
+    """Save buffered packets as a per-alert PCAP file."""
     packets = buffer.snapshot()
     if not packets:
         return None
@@ -118,6 +135,7 @@ def enforce_pcap_retention(
     max_files: int = 0,
     max_total_mb: int = 0,
 ) -> None:
+    """Delete old PCAP files to stay under retention limits."""
     target_dir = resolve_pcap_dir(pcap_dir)
     if not target_dir.exists():
         return

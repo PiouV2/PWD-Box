@@ -1,3 +1,5 @@
+"""Configuration loading and dataclass definitions."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,6 +9,7 @@ from typing import Any, Dict, Optional
 
 @dataclass
 class CaptureConfig:
+    """Capture-related configuration values."""
     interface: Optional[str] = None
     enable_monitor: bool = True
     test_seconds: float = 3.0
@@ -15,12 +18,14 @@ class CaptureConfig:
 
 @dataclass
 class ScannerConfig:
+    """Scanner-related timing and UI refresh settings."""
     ap_stale_seconds: int = 60
     render_interval_seconds: float = 2.0
 
 
 @dataclass
 class DeauthConfig:
+    """Thresholds for deauth detection."""
     window_seconds: float = 10.0
     threshold: int = 20
     cooldown_seconds: float = 30.0
@@ -28,18 +33,21 @@ class DeauthConfig:
 
 @dataclass
 class LoggingConfig:
+    """Logging level and rate limits."""
     level: str = "INFO"
     rate_limit_seconds: float = 1.0
 
 
 @dataclass
 class StorageConfig:
+    """Storage paths and snapshot intervals."""
     db_path: Optional[str] = None
     snapshot_interval_seconds: float = 10.0
 
 
 @dataclass
 class EvidenceConfig:
+    """Evidence capture and retention settings."""
     pcap_enabled: bool = True
     pcap_dir: Optional[str] = None
     pcap_buffer_seconds: float = 15.0
@@ -50,6 +58,7 @@ class EvidenceConfig:
 
 @dataclass
 class Config:
+    """Top-level configuration structure."""
     capture: CaptureConfig
     scanner: ScannerConfig
     deauth: DeauthConfig
@@ -59,6 +68,7 @@ class Config:
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> "Config":
+        """Build a Config from a nested dictionary."""
         capture_data = _get_section(data, "capture")
         scanner_data = _get_section(data, "scanner")
         deauth_data = _get_section(data, "deauth")
@@ -107,15 +117,18 @@ class Config:
 
 
 def _default_config_path() -> Path:
+    """Return the default config file path."""
     return Path(__file__).resolve().parents[2] / "config" / "default.yaml"
 
 
 def _get_section(data: Dict[str, Any], key: str) -> Dict[str, Any]:
+    """Return a dict section or an empty fallback."""
     section = data.get(key, {})
     return section if isinstance(section, dict) else {}
 
 
 def load_config(path: Optional[str] = None) -> Config:
+    """Load config from YAML and return a Config object."""
     config_path = Path(path) if path else _default_config_path()
     data: Dict[str, Any] = {}
     if config_path.exists():

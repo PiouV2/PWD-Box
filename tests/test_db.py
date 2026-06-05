@@ -1,3 +1,5 @@
+"""Database helper tests."""
+
 import sqlite3
 
 try:
@@ -21,6 +23,7 @@ except ImportError:
 
 
 def test_init_db_adds_session_pcap_column_for_existing_db(tmp_path) -> None:
+    """init_db adds pcap_path to existing sessions table."""
     db_path = tmp_path / "pwd_box.sqlite"
     conn = sqlite3.connect(db_path)
     conn.execute(
@@ -47,6 +50,7 @@ def test_init_db_adds_session_pcap_column_for_existing_db(tmp_path) -> None:
 
 
 def test_session_pcap_path_is_returned_in_queries(tmp_path) -> None:
+    """Session queries include the pcap_path field."""
     db_path = tmp_path / "pwd_box.sqlite"
     init_db(str(db_path))
 

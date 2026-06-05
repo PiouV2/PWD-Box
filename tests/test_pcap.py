@@ -1,3 +1,5 @@
+"""PCAP helper tests."""
+
 from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Elt, RadioTap
 from scapy.utils import rdpcap
 import pytest
@@ -9,6 +11,7 @@ except ImportError:
 
 
 def _packet():
+    """Build a simple management frame packet."""
     return (
         RadioTap()
         / Dot11(
@@ -24,6 +27,7 @@ def _packet():
 
 
 def test_session_capture_records_packets(tmp_path) -> None:
+    """Session capture writes packets to disk."""
     capture = SessionPcapCapture(pcap_dir=str(tmp_path))
 
     output_path = capture.start(session_id=42, timestamp=0)
@@ -36,6 +40,7 @@ def test_session_capture_records_packets(tmp_path) -> None:
 
 
 def test_session_capture_close_is_idempotent(tmp_path) -> None:
+    """Stopping capture multiple times is safe."""
     capture = SessionPcapCapture(pcap_dir=str(tmp_path))
 
     output_path = capture.start(session_id=77, timestamp=0)
@@ -47,6 +52,7 @@ def test_session_capture_close_is_idempotent(tmp_path) -> None:
 
 
 def test_session_capture_empty_file_is_readable(tmp_path) -> None:
+    """Empty PCAP files are still readable."""
     capture = SessionPcapCapture(pcap_dir=str(tmp_path))
 
     output_path = capture.start(session_id=10, timestamp=0)
@@ -57,6 +63,7 @@ def test_session_capture_empty_file_is_readable(tmp_path) -> None:
 
 
 def test_alert_pcap_snapshot_still_works(tmp_path) -> None:
+    """Alert snapshots write buffered packets."""
     buffer = PcapBuffer(max_seconds=15, max_packets=100)
     buffer.add(_packet())
 
@@ -74,6 +81,7 @@ def test_alert_pcap_snapshot_still_works(tmp_path) -> None:
 
 
 def test_session_capture_raises_clear_error_if_dir_creation_fails(monkeypatch, tmp_path) -> None:
+    """Clear error is raised when mkdir fails."""
     capture = SessionPcapCapture(pcap_dir=str(tmp_path / "pcaps"))
 
     def _boom(*_args, **_kwargs):

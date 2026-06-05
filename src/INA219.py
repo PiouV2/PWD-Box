@@ -1,3 +1,5 @@
+"""INA219 sensor driver used for battery monitoring."""
+
 import smbus
 import time
 
@@ -57,7 +59,10 @@ class Mode:
 
 
 class INA219:
+    """INA219 current and voltage sensor wrapper."""
+
     def __init__(self, i2c_bus=1, addr=0x40):
+        """Initialize the I2C bus and sensor configuration."""
         self.bus = smbus.SMBus(i2c_bus);
         self.addr = addr
 
@@ -68,10 +73,12 @@ class INA219:
         self.set_calibration_32V_2A()
 
     def read(self,address):
+        """Read a 16-bit register value."""
         data = self.bus.read_i2c_block_data(self.addr, address, 2)
         return ((data[0] * 256 ) + data[1])
 
     def write(self,address,data):
+        """Write a 16-bit register value."""
         temp = [0,0]
         temp[1] = data & 0xFF
         temp[0] =(data & 0xFF00) >> 8
@@ -164,6 +171,7 @@ class INA219:
         self.write(_REG_CONFIG,self.config)
 
     def getShuntVoltage_mV(self):
+        """Return shunt voltage in millivolts."""
         self.write(_REG_CALIBRATION,self._cal_value)
         value = self.read(_REG_SHUNTVOLTAGE)
         if value > 32767:
@@ -171,17 +179,20 @@ class INA219:
         return value * 0.01
 
     def getBusVoltage_V(self):
+        """Return bus voltage in volts."""
         self.write(_REG_CALIBRATION,self._cal_value)
         self.read(_REG_BUSVOLTAGE)
         return (self.read(_REG_BUSVOLTAGE) >> 3) * 0.004
 
     def getCurrent_mA(self):
+        """Return current in milliamps."""
         value = self.read(_REG_CURRENT)
         if value > 32767:
             value -= 65535
         return value * self._current_lsb
 
     def getPower_W(self):
+        """Return power in watts."""
         self.write(_REG_CALIBRATION,self._cal_value)
         value = self.read(_REG_POWER)
         if value > 32767:

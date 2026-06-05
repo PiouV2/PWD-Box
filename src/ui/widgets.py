@@ -1,3 +1,5 @@
+"""Small reusable widgets for the UI."""
+
 from __future__ import annotations
 
 from typing import Callable
@@ -10,7 +12,10 @@ from .theme import Theme
 
 
 class Stepper(BoxLayout):
+    """Numeric stepper with plus/minus buttons."""
+
     def __init__(self, theme: Theme, label: str, value: int, step: int, on_change: Callable[[int], None], **kwargs) -> None:
+        """Create a stepper row with callbacks."""
         super().__init__(orientation="horizontal", size_hint_y=None, height=theme.button_height, spacing=theme.gap_s, **kwargs)
         self.theme = theme
         self.value = value
@@ -29,6 +34,7 @@ class Stepper(BoxLayout):
         self.add_widget(self.plus)
 
     def _update(self, delta: int) -> None:
+        """Apply the delta and notify the handler."""
         self.value = max(0, self.value + delta)
         self.value_label.text = str(self.value)
         self.on_change(self.value)

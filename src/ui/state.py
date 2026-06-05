@@ -1,3 +1,5 @@
+"""Shared UI state container."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -6,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 @dataclass
 class AppState:
+    """Mutable UI state updated by the event queue."""
     status: Dict[str, Any] = field(default_factory=dict)
     networks: List[Dict[str, Any]] = field(default_factory=list)
     alerts: List[Dict[str, Any]] = field(default_factory=list)

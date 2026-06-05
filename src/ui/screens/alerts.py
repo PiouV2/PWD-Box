@@ -1,3 +1,5 @@
+"""Alerts screen with live and historical views."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -19,6 +21,7 @@ from ..theme import Theme
 
 
 def _parse_iso(ts: Optional[str]) -> Optional[datetime]:
+    """Parse an ISO timestamp string into a datetime."""
     if not ts:
         return None
     try:
@@ -28,6 +31,7 @@ def _parse_iso(ts: Optional[str]) -> Optional[datetime]:
 
 
 def _format_duration(start: Optional[str], end: Optional[str]) -> str:
+    """Format a duration between two ISO timestamps."""
     start_dt = _parse_iso(start)
     end_dt = _parse_iso(end)
     if not start_dt or not end_dt:
@@ -44,6 +48,8 @@ def _format_duration(start: Optional[str], end: Optional[str]) -> str:
 
 
 class AlertRow(RecycleDataViewBehavior, BoxLayout):
+    """Recycler row for a live alert."""
+
     timestamp = StringProperty("")
     alert_type = StringProperty("")
     summary = StringProperty("")
@@ -52,6 +58,7 @@ class AlertRow(RecycleDataViewBehavior, BoxLayout):
     theme_ref: Theme = None
 
     def __init__(self, **kwargs) -> None:
+        """Create the row and its labels."""
         theme = self.__class__.theme_ref
         if theme is None:
             raise RuntimeError("Theme not set for AlertRow")
@@ -70,6 +77,7 @@ class AlertRow(RecycleDataViewBehavior, BoxLayout):
         self.add_widget(self.label_pcap)
 
     def refresh_view_attrs(self, rv, index, data):
+        """Bind row properties from recycler data."""
         self.alert_data = data.get("alert_data", {})
         self.timestamp = data.get("timestamp", "")
         self.alert_type = data.get("alert_type", "")
@@ -82,12 +90,14 @@ class AlertRow(RecycleDataViewBehavior, BoxLayout):
         return super().refresh_view_attrs(rv, index, data)
 
     def on_touch_down(self, touch):
+        """Open a details popup when the row is tapped."""
         if not self.collide_point(*touch.pos):
             return super().on_touch_down(touch)
         self._show_details()
         return True
 
     def _show_details(self) -> None:
+        """Show a popup with alert details."""
         details = self.alert_data
         message = [
             f"Time: {details.get('timestamp')}",
@@ -111,11 +121,14 @@ class AlertRow(RecycleDataViewBehavior, BoxLayout):
 
 
 class SessionRow(RecycleDataViewBehavior, BoxLayout):
+    """Recycler row for a stored session."""
+
     session_id = NumericProperty(0)
     summary = StringProperty("")
     theme_ref: Optional[Theme] = None
 
     def __init__(self, **kwargs) -> None:
+        """Create the row and label."""
         theme = self.__class__.theme_ref
         if theme is None:
             raise RuntimeError("Theme not set for SessionRow")
@@ -127,6 +140,7 @@ class SessionRow(RecycleDataViewBehavior, BoxLayout):
         self.on_select = None
 
     def refresh_view_attrs(self, rv, index, data):
+        """Bind row properties from recycler data."""
         self.session_id = data.get("session_id", 0)
         self.summary = data.get("summary", "")
         self.label.text = self.summary
@@ -134,6 +148,7 @@ class SessionRow(RecycleDataViewBehavior, BoxLayout):
         return super().refresh_view_attrs(rv, index, data)
 
     def on_touch_down(self, touch):
+        """Select the session when the row is tapped."""
         if not self.collide_point(*touch.pos):
             return super().on_touch_down(touch)
         if self.on_select:
@@ -142,9 +157,12 @@ class SessionRow(RecycleDataViewBehavior, BoxLayout):
 
 
 class HistoryAlertRow(RecycleDataViewBehavior, BoxLayout):
+    """Recycler row for a historical alert."""
+
     theme_ref: Optional[Theme] = None
 
     def __init__(self, **kwargs) -> None:
+        """Create the row and label."""
         theme = self.__class__.theme_ref
         if theme is None:
             raise RuntimeError("Theme not set for HistoryAlertRow")
@@ -155,11 +173,13 @@ class HistoryAlertRow(RecycleDataViewBehavior, BoxLayout):
         self.add_widget(self.label)
 
     def refresh_view_attrs(self, rv, index, data):
+        """Bind row properties from recycler data."""
         self.label.text = data.get("summary", "")
         return super().refresh_view_attrs(rv, index, data)
 
 
 def _build_recycler(viewclass, theme: Theme) -> RecycleView:
+    """Build a simple vertical recycler view."""
     recycler = RecycleView()
     recycler.viewclass = viewclass
     layout = RecycleBoxLayout(orientation="vertical", default_size=(None, theme.row_height))
@@ -172,7 +192,10 @@ def _build_recycler(viewclass, theme: Theme) -> RecycleView:
 
 
 class AlertsScreen(Screen):
+    """Alerts screen with live feed and stored sessions."""
+
     def __init__(self, app, theme: Theme, **kwargs) -> None:
+        """Build the alerts layout."""
         super().__init__(name="alerts", **kwargs)
         self.app = app
         self.theme = theme
@@ -214,6 +237,7 @@ class AlertsScreen(Screen):
         self.add_widget(root)
 
     def update_alerts(self, alerts: List[Dict[str, object]]) -> None:
+        """Update the live alert list."""
         rows = []
         for alert in alerts:
             key = alert.get("key") or "-"
@@ -232,6 +256,7 @@ class AlertsScreen(Screen):
         self.live_view.data = rows or [{"timestamp": "", "alert_type": "", "summary": "No alerts", "pcap": "", "alert_data": {}}]
 
     def refresh_history(self) -> None:
+        """Reload session list and history panel."""
         sessions = list_session_summaries(limit=20, db_path=self.app.db_path)
         rows = []
         for session in sessions:
@@ -256,10 +281,12 @@ class AlertsScreen(Screen):
         self._load_alerts(self.selected_session)
 
     def _select_session(self, session_id: int) -> None:
+        """Select a session and load its alerts."""
         self.selected_session = session_id
         self._load_alerts(session_id)
 
     def _load_alerts(self, session_id: Optional[int]) -> None:
+        """Load and render alerts for the given session."""
         if session_id is None:
             self.history_alerts_view.data = [{"summary": "No alerts"}]
             return

@@ -1,3 +1,5 @@
+"""Factory for selecting a battery monitor driver."""
+
 from __future__ import annotations
 
 import os
@@ -7,6 +9,7 @@ from .battery import BatteryMonitor
 
 
 class _DemoBatteryDriver:
+    """Simple demo battery driver."""
     def getBusVoltage_V(self) -> float:
         return 11.7
 
@@ -15,6 +18,7 @@ class _DemoBatteryDriver:
 
 
 def _should_try_ina219() -> bool:
+    """Return True if INA219 should be attempted on this host."""
     configured = os.environ.get("PWDBOX_BATTERY_USE_INA219")
     if configured is not None:
         return configured == "1"
@@ -22,6 +26,7 @@ def _should_try_ina219() -> bool:
 
 
 def build_battery_monitor(demo: bool = False) -> BatteryMonitor:
+    """Build a battery monitor with the best available driver."""
     if demo or os.environ.get("PWDBOX_BATTERY_DEMO") == "1":
         return BatteryMonitor(driver=_DemoBatteryDriver())
 

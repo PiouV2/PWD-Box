@@ -1,3 +1,5 @@
+"""Packet parser tests."""
+
 from scapy.layers.dot11 import Dot11, Dot11Beacon, Dot11Deauth, Dot11Elt, RadioTap
 
 from pwdbox.capture.packet_parser import parse_packet
@@ -5,6 +7,7 @@ from pwdbox.models import DeauthEvent
 
 
 def test_parse_beacon_extracts_ssid() -> None:
+    """Beacon frames produce SSID and RSSI values."""
     pkt = (
         RadioTap(dBm_AntSignal=-40)
         / Dot11(
@@ -26,6 +29,7 @@ def test_parse_beacon_extracts_ssid() -> None:
 
 
 def test_parse_deauth_event() -> None:
+    """Deauth frames produce DeauthEvent records."""
     pkt = (
         RadioTap()
         / Dot11(
@@ -43,5 +47,6 @@ def test_parse_deauth_event() -> None:
 
 
 def test_parse_malformed_packet_returns_none() -> None:
+    """Malformed inputs return None."""
     assert parse_packet(None) is None
     assert parse_packet(object()) is None

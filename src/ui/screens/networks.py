@@ -1,3 +1,5 @@
+"""Networks screen for live AP visibility."""
+
 from __future__ import annotations
 
 from typing import Dict, List, Optional
@@ -12,7 +14,10 @@ from ..theme import Theme
 
 
 class NetworkRow(BoxLayout):
+    """Single row in the network list."""
+
     def __init__(self, theme: Theme, ssid: str, bssid: str, rssi: str, seen: str, **kwargs) -> None:
+        """Create the row with SSID, BSSID, RSSI, and age."""
         super().__init__(orientation="horizontal", size_hint_y=None, height=theme.row_height, spacing=theme.gap_s, **kwargs)
         self.add_widget(Label(text=ssid, color=theme.palette.text, font_size=theme.body, size_hint_x=0.38))
         self.add_widget(Label(text=bssid, color=theme.palette.text_dim, font_size=theme.body, size_hint_x=0.34))
@@ -21,7 +26,10 @@ class NetworkRow(BoxLayout):
 
 
 class NetworksScreen(Screen):
+    """Screen that shows live network observations."""
+
     def __init__(self, app, theme: Theme, **kwargs) -> None:
+        """Build the networks layout."""
         super().__init__(name="networks", **kwargs)
         self.app = app
         self.theme = theme
@@ -83,6 +91,7 @@ class NetworksScreen(Screen):
         self.update_networks([])
 
     def update_networks(self, networks: List[Dict[str, object]]) -> None:
+        """Replace the network list rows."""
         self._networks = networks
         self.rows_container.clear_widgets()
         for item in networks:
@@ -110,6 +119,7 @@ class NetworksScreen(Screen):
         running: bool,
         error: Optional[str],
     ) -> None:
+        """Show any status error banner for the view."""
         palette = self.theme.palette
         if error:
             self.status_card.height = self.theme.dp(72)

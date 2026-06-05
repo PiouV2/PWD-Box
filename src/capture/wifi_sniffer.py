@@ -1,3 +1,5 @@
+"""Thin wrappers around scapy sniffing for monitor mode."""
+
 from __future__ import annotations
 
 import subprocess
@@ -8,6 +10,7 @@ from scapy.layers.dot11 import Dot11
 
 
 def check_monitor_mode(interface: str) -> bool:
+    """Return True if the interface is in monitor mode."""
     try:
         result = subprocess.run(
             ["iw", "dev", interface, "info"],
@@ -34,6 +37,7 @@ def capture_test(
     seconds: float = 3.0,
     management_only: bool = True,
 ) -> bool:
+    """Capture a short sample to confirm packets are visible."""
     count = 0
 
     def _count(pkt) -> None:
@@ -65,6 +69,7 @@ def sniff_loop(
     tick_interval: float = 1.0,
     on_tick: Optional[Callable] = None,
 ) -> None:
+    """Run a stop-aware sniff loop with an optional tick hook."""
     def _filter(pkt) -> bool:
         if not pkt.haslayer(Dot11):
             return False

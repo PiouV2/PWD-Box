@@ -1,3 +1,5 @@
+"""Battery monitoring helpers and platform drivers."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -12,6 +14,7 @@ FULL_BATTERY_VOLTAGE = 12.6
 
 @dataclass(frozen=True)
 class BatterySnapshot:
+    """Snapshot of battery availability and measurements."""
     available: bool
     percentage: Optional[int] = None
     voltage_v: Optional[float] = None
@@ -21,16 +24,19 @@ class BatterySnapshot:
 
     @classmethod
     def unavailable(cls, message: str = "Battery unavailable") -> "BatterySnapshot":
+        """Return a snapshot with no battery data."""
         return cls(available=False, message=message)
 
     @property
     def tone(self) -> str:
+        """Return a short UI tone based on status."""
         if not self.available:
             return "neutral"
         return "ok" if self.charging else "warn"
 
 
 def estimate_battery_percentage(voltage_v: float) -> int:
+    """Estimate battery percentage from voltage."""
     if voltage_v <= EMPTY_BATTERY_VOLTAGE:
         return 0
     if voltage_v >= FULL_BATTERY_VOLTAGE:
@@ -40,10 +46,12 @@ def estimate_battery_percentage(voltage_v: float) -> int:
 
 
 def format_current_ma(current_ma: float) -> str:
+    """Format current in milliamps with sign."""
     return f"{current_ma:+.1f} mA"
 
 
 def format_battery_status(snapshot: BatterySnapshot) -> str:
+    """Return a user-friendly battery summary string."""
     if not snapshot.available:
         return snapshot.message
 
@@ -54,6 +62,7 @@ def format_battery_status(snapshot: BatterySnapshot) -> str:
 
 
 class _DemoDriver:
+    """Hardcoded driver used for demo output."""
     def getBusVoltage_V(self) -> float:
         return 11.7
 
@@ -62,16 +71,21 @@ class _DemoDriver:
 
 
 class _SysfsDriver:
+    """Read voltage and current from Linux sysfs."""
+
     def __init__(self, base_path: str) -> None:
+        """Store the sysfs base path."""
         self.base = Path(base_path)
 
     def _read_text(self, name: str) -> Optional[str]:
+        """Read a text value from sysfs."""
         try:
             return (self.base / name).read_text().strip()
         except Exception:
             return None
 
     def _read_int_loose(self, name: str) -> Optional[int]:
+        """Read an int, with a loose regex fallback."""
         txt = self._read_text(name)
         if not txt:
             return None
@@ -89,6 +103,7 @@ class _SysfsDriver:
                 return None
 
     def _read_uevent_value(self, key: str) -> Optional[int]:
+        """Read a value from the uevent file."""
         txt = self._read_text("uevent")
         if not txt:
             return None
@@ -101,6 +116,7 @@ class _SysfsDriver:
         return None
 
     def getBusVoltage_V(self) -> Optional[float]:
+        """Return bus voltage in volts if available."""
         raw = self._read_int_loose("voltage_now")
         if raw is None:
             raw = self._read_int_loose("voltage")
@@ -115,6 +131,7 @@ class _SysfsDriver:
         return float(raw)
 
     def getCurrent_mA(self) -> Optional[float]:
+        """Return current in milliamps if available."""
         raw = self._read_int_loose("current_now")
         if raw is None:
             raw = self._read_int_loose("current")
@@ -134,6 +151,7 @@ class _SysfsDriver:
 
 
 def _find_sysfs_battery() -> Optional[str]:
+    """Locate a sysfs power supply that looks like a battery."""
     base = Path("/sys/class/power_supply")
     if not base.exists():
         return None
@@ -153,10 +171,14 @@ def _find_sysfs_battery() -> Optional[str]:
 
 
 class BatteryMonitor:
+    """Select a driver and return battery snapshots."""
+
     def __init__(self, driver: Optional[object] = None) -> None:
+        """Create a monitor with an optional driver override."""
         self._driver = driver
 
     def _get_driver(self) -> Optional[object]:
+        """Choose a driver based on env vars and sysfs."""
         if self._driver is not None:
             return self._driver
         if os.environ.get("PWDBOX_BATTERY_DEMO") == "1":
@@ -169,6 +191,7 @@ class BatteryMonitor:
         return None
 
     def read_snapshot(self) -> BatterySnapshot:
+        """Read voltage/current and return a snapshot."""
         driver = self._get_driver()
         if driver is None:
             return BatterySnapshot.unavailable()

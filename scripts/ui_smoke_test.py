@@ -1,3 +1,5 @@
+"""Run the UI in demo mode for a quick smoke test."""
+
 from __future__ import annotations
 
 from pathlib import Path

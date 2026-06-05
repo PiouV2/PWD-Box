@@ -1,3 +1,5 @@
+"""Data models for parsed packets and alerts."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -6,6 +8,7 @@ from typing import Optional
 
 @dataclass
 class FrameEvent:
+    """Normalized 802.11 frame metadata."""
     timestamp: float
     monotonic_ts: float
     frame_type: int
@@ -20,11 +23,13 @@ class FrameEvent:
 
 @dataclass
 class DeauthEvent(FrameEvent):
+    """Deauthentication frame details."""
     reason_code: Optional[int] = None
 
 
 @dataclass
 class NetworkInfo:
+    """Snapshot of a network BSSID and signal strength."""
     bssid: str
     ssid: Optional[str]
     last_seen: float
@@ -33,6 +38,7 @@ class NetworkInfo:
 
 @dataclass
 class AlertEvent:
+    """Alert metadata emitted by detectors."""
     timestamp: float
     monotonic_ts: float
     alert_type: str

@@ -1,3 +1,5 @@
+"""Kivy app wiring for the PWD-Box UI."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -34,7 +36,10 @@ from .theme import resolve_theme
 
 
 class PWDBoxApp(App):
+    """Main Kivy application for the touchscreen UI."""
+
     def __init__(self, config: Config, demo: bool = False, **kwargs) -> None:
+        """Create the UI app with config and demo mode."""
         super().__init__(**kwargs)
         self.app_config = config
         self.demo = demo
@@ -64,6 +69,7 @@ class PWDBoxApp(App):
         self.load_settings()
 
     def load_settings(self) -> None:
+        """Load persisted settings into app state."""
         default_interface = self.app_config.capture.interface or self.interface_choice or "wlan1"
         self.interface_choice = str(
             get_setting(
@@ -96,6 +102,7 @@ class PWDBoxApp(App):
         self.theme = resolve_theme(self.theme_mode)
 
     def persist_settings(self) -> None:
+        """Persist current settings to storage."""
         set_setting("interface", self.interface_choice, db_path=self.db_path)
         set_setting("last_interface", self.interface_choice, db_path=self.db_path)
         set_setting("enable_monitor", self.app_config.capture.enable_monitor, db_path=self.db_path)
@@ -108,6 +115,7 @@ class PWDBoxApp(App):
             self.header_bar.set_message("Settings saved", tone="ok")
 
     def reload_settings(self) -> None:
+        """Reload settings and refresh visible screens."""
         self.load_settings()
         if self.settings:
             self.settings.refresh()
@@ -123,10 +131,12 @@ class PWDBoxApp(App):
             self.header_bar.set_message("Settings reloaded", tone="neutral")
 
     def mark_setup_complete(self) -> None:
+        """Persist that setup has been completed."""
         self.setup_complete = True
         set_setting("setup_complete", True, db_path=self.db_path)
 
     def set_theme(self, mode: str) -> None:
+        """Switch UI theme and recompose the root widgets."""
         previous_screen = None
         if self.screen_manager:
             previous_screen = self.screen_manager.current
@@ -146,6 +156,7 @@ class PWDBoxApp(App):
             self.header_bar.set_message("Theme updated", tone="neutral")
 
     def _compose_root(self, root: BoxLayout) -> None:
+        """Build the header, screens, and footer navigation."""
         self.header_bar = HeaderBar(self.theme, title="PWD-Box")
         root.add_widget(self.header_bar)
 
@@ -177,6 +188,7 @@ class PWDBoxApp(App):
         self.refresh_battery_status(0)
 
     def build(self):
+        """Build the Kivy root widget tree."""
         self.theme = resolve_theme(self.theme_mode)
         Window.clearcolor = self.theme.palette.background
         root = BoxLayout(orientation="vertical")
@@ -184,6 +196,7 @@ class PWDBoxApp(App):
         return root
 
     def on_start(self) -> None:
+        """Schedule timers and show setup when needed."""
         Clock.schedule_interval(self.process_queue, 0.25)
         Clock.schedule_interval(self.refresh_history, 5.0)
         Clock.schedule_interval(self.refresh_battery_status, 10.0)
@@ -195,6 +208,7 @@ class PWDBoxApp(App):
             self.show_screen("setup")
 
     def start_monitoring(self) -> None:
+        """Start the capture session and update UI state."""
         if self.controller.is_running():
             if self.header_bar:
                 self.header_bar.set_message("Monitoring already running", tone="neutral")
@@ -258,6 +272,7 @@ class PWDBoxApp(App):
             self.header_bar.set_message("Monitoring already running", tone="neutral")
 
     def stop_monitoring(self) -> None:
+        """Stop the capture session if running."""
         stopped = self.controller.stop()
         if not stopped and self.header_bar:
             if self.state.last_saved_pcap_path:
@@ -267,6 +282,7 @@ class PWDBoxApp(App):
                 self.header_bar.set_message("Monitoring already stopped", tone="neutral")
 
     def show_screen(self, name: str) -> None:
+        """Switch active screen and refresh when needed."""
         if self.screen_manager:
             self.screen_manager.current = name
         if name == "settings" and self.settings:
@@ -283,6 +299,7 @@ class PWDBoxApp(App):
             self.setup.refresh()
 
     def process_queue(self, _dt) -> None:
+        """Drain UI events from the capture thread."""
         updated_networks = False
         updated_alerts = False
         refresh_history = False
@@ -341,11 +358,13 @@ class PWDBoxApp(App):
             self.alerts.refresh_history()
 
     def refresh_battery_status(self, _dt) -> None:
+        """Update the battery widget from the monitor."""
         if not self.header_bar:
             return
         self.header_bar.update_battery(self.battery_monitor.read_snapshot())
 
     def _update_dashboard(self) -> None:
+        """Synchronize dashboard widgets with app state."""
         if not self.dashboard or not self.header_bar:
             return
         status = self.state.status
@@ -396,12 +415,14 @@ class PWDBoxApp(App):
             self.dashboard.show_alert_banner(None)
 
     def refresh_history(self, _dt) -> None:
+        """Refresh alert history when the screen is visible."""
         if self.screen_manager and self.screen_manager.current != "alerts":
             return
         if self.alerts:
             self.alerts.refresh_history()
 
     def _demo_tick(self, _dt) -> None:
+        """Populate the UI with demo data on a timer."""
         self.state.status.update(
             {
                 "running": True,
@@ -422,10 +443,12 @@ class PWDBoxApp(App):
             self.alerts.update_alerts(self.state.alerts)
 
     def on_stop(self) -> None:
+        """Stop capture on app exit."""
         self.controller.stop()
 
 
 def run_ui(config_path: Optional[str] = None, demo: bool = False) -> int:
+    """Launch the UI application and return an exit code."""
     config = load_config(config_path)
     setup_logging(config.logging.level)
     app = PWDBoxApp(config, demo=demo)

@@ -1,3 +1,5 @@
+"""Detect deauthentication floods within a time window."""
+
 from __future__ import annotations
 
 from collections import deque
@@ -8,12 +10,15 @@ from ..models import AlertEvent, DeauthEvent
 
 
 class DeauthDetector:
+    """Maintain a rolling window of deauth events per key."""
+
     def __init__(
         self,
         threshold: int,
         window_seconds: float,
         cooldown_seconds: float,
     ) -> None:
+        """Initialize limits and internal buckets."""
         self.threshold = max(threshold, 1)
         self.window_seconds = max(window_seconds, 0.1)
         self.cooldown_seconds = max(cooldown_seconds, 0.0)
@@ -21,6 +26,7 @@ class DeauthDetector:
         self._last_alert: Dict[str, float] = {}
 
     def _key(self, event: DeauthEvent) -> str:
+        """Build a stable key from BSSID and source address."""
         bssid = event.bssid or "unknown"
         src = event.src or "unknown"
         return f"{bssid}|{src}"
@@ -28,6 +34,7 @@ class DeauthDetector:
     def process(
         self, event: DeauthEvent, now: Optional[float] = None
     ) -> Optional[AlertEvent]:
+        """Ingest a deauth event and emit an alert if triggered."""
         ts = (
             event.monotonic_ts
             if event.monotonic_ts is not None

@@ -1,3 +1,5 @@
+"""System settings screen."""
+
 from __future__ import annotations
 
 from kivy.uix.boxlayout import BoxLayout
@@ -9,7 +11,10 @@ from ..theme import Theme
 
 
 class SettingsSystemScreen(Screen):
+    """Screen for theme and system tools."""
+
     def __init__(self, app, theme: Theme, **kwargs) -> None:
+        """Build the system settings layout."""
         super().__init__(name="settings_system", **kwargs)
         self.app = app
         self.theme = theme
@@ -78,6 +83,7 @@ class SettingsSystemScreen(Screen):
         self.add_widget(root)
 
     def _header(self, title: str) -> BoxLayout:
+        """Create a back header row."""
         row = BoxLayout(orientation="horizontal", size_hint_y=None, height=self.theme.nav_height, spacing=self.theme.gap_s)
         back = SecondaryButton(self.theme, text="Back")
         back.size_hint_x = 0.2
@@ -89,9 +95,11 @@ class SettingsSystemScreen(Screen):
         return row
 
     def _section_label(self, text: str) -> Label:
+        """Return a section title label."""
         return Label(text=text, color=self.theme.palette.text, font_size=self.theme.h3, size_hint_y=None, height=self.theme.dp(20))
 
     def _body_label(self, text: str) -> Label:
+        """Return a helper text label."""
         label = Label(
             text=text,
             color=self.theme.palette.text_dim,
@@ -105,6 +113,7 @@ class SettingsSystemScreen(Screen):
         return label
 
     def _field(self, label_text: str, widget) -> BoxLayout:
+        """Create a labeled field container."""
         layout = BoxLayout(orientation="vertical", size_hint_y=None, height=self.theme.dp(64), spacing=self.theme.gap_xs)
         label = Label(
             text=label_text,
@@ -121,6 +130,7 @@ class SettingsSystemScreen(Screen):
         return layout
 
     def _value_label(self, value: str) -> Label:
+        """Return a value label used in read-only fields."""
         label = Label(
             text=value,
             color=self.theme.palette.text,
@@ -134,22 +144,27 @@ class SettingsSystemScreen(Screen):
         return label
 
     def _save(self) -> None:
+        """Persist theme changes and settings."""
         self.app.set_theme(self._pending_theme_mode)
         self.app.persist_settings()
 
     def _reset(self) -> None:
+        """Reload settings and refresh fields."""
         self.app.reload_settings()
         self.refresh()
 
     def _theme_button_text(self) -> str:
+        """Return the theme button label based on state."""
         if self._pending_theme_mode == "dark":
             return "Theme: Dark (tap for Light)"
         return "Theme: Light (tap for Dark)"
 
     def _toggle_theme(self) -> None:
+        """Toggle between light and dark theme previews."""
         self._pending_theme_mode = "light" if self._pending_theme_mode == "dark" else "dark"
         self.theme_button.text = self._theme_button_text()
 
     def refresh(self) -> None:
+        """Refresh UI widgets from current config values."""
         self._pending_theme_mode = self.app.theme_mode or "dark"
         self.theme_button.text = self._theme_button_text()

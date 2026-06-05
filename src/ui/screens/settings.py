@@ -1,3 +1,5 @@
+"""Settings hub screen."""
+
 from __future__ import annotations
 
 from kivy.uix.boxlayout import BoxLayout
@@ -10,7 +12,10 @@ from ..theme import Theme
 
 
 class SettingsScreen(Screen):
+    """Top-level settings navigation screen."""
+
     def __init__(self, app, theme: Theme, **kwargs) -> None:
+        """Build the settings hub layout."""
         super().__init__(name="settings", **kwargs)
         self.app = app
         self.theme = theme
@@ -100,4 +105,5 @@ class SettingsScreen(Screen):
         self.add_widget(root)
 
     def refresh(self) -> None:
+        """No-op hook for settings refresh."""
         return None

@@ -1,3 +1,5 @@
+"""Background thread controller for capture sessions."""
+
 from __future__ import annotations
 
 import queue
@@ -9,7 +11,10 @@ from ..config import Config
 
 
 class MonitorController:
+    """Run SessionManager in a background thread for the UI."""
+
     def __init__(self, config: Config, event_queue: queue.Queue) -> None:
+        """Prepare a controller with config and event queue."""
         self.config = config
         self.event_queue = event_queue
         self.thread: Optional[threading.Thread] = None
@@ -17,6 +22,7 @@ class MonitorController:
         self._lock = threading.Lock()
 
     def start(self, interface: Optional[str] = None) -> bool:
+        """Start a new background capture thread."""
         with self._lock:
             if self.thread and self.thread.is_alive():
                 return False
@@ -30,6 +36,7 @@ class MonitorController:
             return True
 
     def _run(self, interface: Optional[str]) -> None:
+        """Thread entry point for the session run loop."""
         with self._lock:
             session = self.session
             thread = self.thread
@@ -47,6 +54,7 @@ class MonitorController:
                 self.session = None
 
     def stop(self) -> bool:
+        """Stop the running capture thread."""
         with self._lock:
             session = self.session
             thread = self.thread
@@ -63,5 +71,6 @@ class MonitorController:
         return True
 
     def is_running(self) -> bool:
+        """Return True if the capture thread is active."""
         with self._lock:
             return bool(self.thread and self.thread.is_alive())

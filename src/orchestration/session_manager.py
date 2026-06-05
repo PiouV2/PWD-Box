@@ -1,3 +1,5 @@
+"""Capture loop orchestration and event dispatch."""
+
 from __future__ import annotations
 
 from collections import deque
@@ -33,11 +35,14 @@ from ..utils.logging import RateLimiter
 
 
 class SessionManager:
+    """Run the passive capture session and emit UI events."""
+
     def __init__(
         self,
         config: Config,
         event_queue: Optional[queue.Queue] = None,
     ) -> None:
+        """Prepare runtime state and optional UI event queue."""
         self.config = config
         self.event_queue = event_queue
         self.ap_table: Dict[str, NetworkInfo] = {}
@@ -81,6 +86,7 @@ class SessionManager:
         install_signal_handlers: bool = True,
         render_console: bool = True,
     ) -> int:
+        """Start the capture loop and return an exit code."""
         self.stop_event.clear()
         self.render_console = render_console
         iface = interface or self.config.capture.interface
@@ -149,6 +155,7 @@ class SessionManager:
         return exit_code
 
     def _install_signal_handlers(self) -> None:
+        """Stop the session when SIGINT or SIGTERM arrives."""
         def _handler(_signum, _frame) -> None:
             self.stop_event.set()
 
@@ -156,9 +163,11 @@ class SessionManager:
         signal.signal(signal.SIGTERM, _handler)
 
     def stop(self) -> None:
+        """Request a clean shutdown of the capture loop."""
         self.stop_event.set()
 
     def _capture_error_message(self, iface: str, prefix: str) -> str:
+        """Build a user-friendly capture error message."""
         if os.geteuid() != 0:
             return (
                 f"{prefix} on {iface}. Run the UI with sudo or grant "
@@ -167,6 +176,7 @@ class SessionManager:
         return f"{prefix} on {iface}. Check monitor-mode support and adapter state."
 
     def _emit_event(self, event_type: str, data: Dict[str, Any]) -> None:
+        """Send a structured event to the UI queue."""
         if not self.event_queue:
             return
         try:
@@ -175,10 +185,12 @@ class SessionManager:
             return
 
     def _emit_status(self, **updates: Any) -> None:
+        """Update and broadcast the current session status."""
         self.status.update({key: value for key, value in updates.items()})
         self._emit_event("status", dict(self.status))
 
     def _init_storage(self, iface: str) -> None:
+        """Initialize the database and create a session row."""
         try:
             self.db_path = str(init_db(self.config.storage.db_path))
             self.session_id = create_session(
@@ -198,6 +210,7 @@ class SessionManager:
             )
 
     def _close_session(self, status: str) -> None:
+        """Finalize evidence capture and close the DB session."""
         self._finalize_session_capture()
         if self.session_id is None:
             return
@@ -207,6 +220,7 @@ class SessionManager:
             logging.error("Session close failed: %s", exc)
 
     def _start_session_capture(self) -> None:
+        """Start full-session PCAP capture when enabled."""
         if self.session_capture is None or self.session_id is None:
             return
         try:
@@ -231,6 +245,7 @@ class SessionManager:
         )
 
     def _finalize_session_capture(self) -> None:
+        """Stop full-session capture and enforce retention limits."""
         if self.session_capture is None:
             return
 
@@ -272,6 +287,7 @@ class SessionManager:
         )
 
     def _disable_session_capture(self, exc: Exception) -> None:
+        """Disable evidence capture after a failure."""
         self.session_capture_error = f"Evidence capture failed: {exc}"
         logging.error(self.session_capture_error)
         if self.session_capture is not None:
@@ -290,6 +306,7 @@ class SessionManager:
         )
 
     def _handle_packet(self, pkt) -> None:
+        """Handle a raw packet and route parsed events."""
         if self.session_capture is not None:
             try:
                 self.session_capture.write(pkt)
@@ -306,6 +323,7 @@ class SessionManager:
             self._update_ap_table(event)
 
     def _handle_deauth(self, event: DeauthEvent) -> None:
+        """Update counters, log alerts, and persist evidence."""
         self.deauth_seen += 1
         alert = self.detector.process(event)
 
@@ -374,6 +392,7 @@ class SessionManager:
             self._emit_event("alert", alert_payload)
 
     def _update_ap_table(self, event: FrameEvent) -> None:
+        """Track AP beacons and probe responses for the UI."""
         if event.frame_type != 0 or event.frame_subtype not in (8, 5):
             return
         if not event.bssid:
@@ -389,6 +408,7 @@ class SessionManager:
         )
 
     def _prune_ap_table(self, now: float) -> None:
+        """Remove stale AP entries based on last seen time."""
         stale_seconds = self.config.scanner.ap_stale_seconds
         for bssid in list(self.ap_table.keys()):
             info = self.ap_table[bssid]
@@ -396,6 +416,7 @@ class SessionManager:
                 del self.ap_table[bssid]
 
     def _on_tick(self) -> None:
+        """Run periodic maintenance during the capture loop."""
         now = time.time()
         self._prune_ap_table(now)
 
