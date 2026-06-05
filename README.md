@@ -255,64 +255,6 @@ If Kivy fails to install on Raspberry Pi OS, install the necessary graphics buil
 ### Storage checks
 The health check validates that required storage directories can be created and used before a monitoring session begins.
 
-## Phase 1 Foundations
-
-This repository currently reflects the Phase 1 foundation of the project.
-
-### Scope
-
-In scope:
-
-- passive-only Wi-Fi monitoring of 802.11 management traffic
-- deauthentication flood detection with conservative thresholds
-- touchscreen UI for live status and alerts
-- local evidence storage with SQLite and PCAP
-- on-device settings for interface, evidence, and diagnostics
-
-Out of scope:
-
-- packet injection
-- jamming or offensive tooling
-- Bluetooth monitoring
-- active network scanning or association
-- cloud backends or remote telemetry
-
-### Functional Requirements
-
-- FR1: capture Wi-Fi management frames in monitor mode without transmitting
-- FR2: detect deauthentication floods using a sliding window and threshold
-- FR3: present real-time alerts on a touchscreen UI
-- FR4: store sessions, alerts, and network snapshots in SQLite
-- FR5: capture PCAP evidence with retention limits
-- FR6: provide on-device configuration for interface, evidence, and diagnostics
-
-### Non-Functional Requirements
-
-- NFR1: remain passive-only
-- NFR2: run on Raspberry Pi-class hardware
-- NFR3: rely on open-source libraries
-- NFR4: keep the UI understandable for non-expert operators
-- NFR5: bound storage use with retention controls
-
-### Assumptions
-
-- a monitor-mode capable adapter is available
-- the device runs Linux with appropriate permissions
-- storage is local and persistent across reboots
-
-### Constraints
-
-- passive-only operation
-- no injection or active interference
-- lightweight dependencies and minimal services
-
-### Success Criteria
-
-- SC1: a deauth flood crossing the configured threshold triggers a UI alert
-- SC2: alerts are persisted with session context
-- SC3: PCAP evidence is saved and retained within configured bounds
-- SC4: a non-expert can start monitoring from the dashboard with minimal setup
-
 ## Objective to Implementation Mapping
 
 | Objective | Implementation Area |
@@ -339,4 +281,4 @@ Keep each GIF under about 10 seconds and crop tightly around the UI so the motio
 
 ## Status
 
-PWD-Box is a Phase 1 prototype with working passive monitoring, local evidence capture, and an operator-facing UI. The design goal is a small, safe, local-first monitoring device rather than a general wireless attack toolkit.
+PWD-Box is a prototype with working passive monitoring, local evidence capture, and an operator-facing UI. The design goal is a small, safe, local-first monitoring device rather than a general wireless attack toolkit.
