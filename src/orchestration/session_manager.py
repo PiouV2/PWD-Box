@@ -10,7 +10,7 @@ import time
 from typing import Any, Deque, Dict, Optional
 
 from ..capture.packet_parser import parse_packet
-from ..capture.wifi_sniffer import capture_test, ensure_monitor_mode, sniff_loop
+from ..capture.wifi_sniffer import capture_test, check_monitor_mode, sniff_loop
 from ..config import Config
 from ..detection.deauth_detector import DeauthDetector
 from ..evidence.pcap import (
@@ -92,11 +92,11 @@ class SessionManager:
 
         self._init_storage(iface)
 
-        if not ensure_monitor_mode(iface, self.config.capture.enable_monitor):
-            logging.error("Monitor mode could not be enabled on %s.", iface)
+        if not check_monitor_mode(iface):
+            logging.error("Interface %s is not in monitor mode.", iface)
             self._emit_status(
                 monitor_mode=False,
-                message=self._capture_error_message(iface, "Monitor mode setup failed"),
+                message=self._capture_error_message(iface, "Interface is not in monitor mode"),
             )
             self._close_session("error")
             return 2

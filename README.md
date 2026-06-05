@@ -233,11 +233,21 @@ Use `sudo`, or configure the necessary capabilities for packet capture.
 ### Adapter support
 Your Wi-Fi adapter must support monitor mode.
 
-If needed, use the helper:
+Monitor mode must be enabled manually before starting PWD-Box:
 
 ```bash
-sudo env PYTHONPATH=. .venv/bin/python scripts/set_monitor_mode.py --interface wlan1
+sudo ip link set wlan1 down
+sudo iw dev wlan1 set type monitor
+sudo ip link set wlan1 up
 ```
+
+Replace `wlan1` with your actual interface name. Verify it worked with:
+
+```bash
+iw dev wlan1 info
+```
+
+The output should show `type monitor`.
 
 ### Kivy dependencies
 If Kivy fails to install on Raspberry Pi OS, install the necessary graphics build dependencies first.

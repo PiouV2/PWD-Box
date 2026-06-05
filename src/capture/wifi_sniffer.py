@@ -7,19 +7,6 @@ from scapy.all import sniff
 from scapy.layers.dot11 import Dot11
 
 
-def _run_cmd(command: list[str]) -> bool:
-    try:
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        return result.returncode == 0
-    except Exception:
-        return False
-
-
 def check_monitor_mode(interface: str) -> bool:
     try:
         result = subprocess.run(
@@ -40,24 +27,6 @@ def check_monitor_mode(interface: str) -> bool:
     return False
 
 
-def enable_monitor_mode(interface: str) -> bool:
-    if not _run_cmd(["ip", "link", "set", interface, "down"]):
-        return False
-    if not _run_cmd(["iw", "dev", interface, "set", "type", "monitor"]):
-        return False
-    if not _run_cmd(["ip", "link", "set", interface, "up"]):
-        return False
-    return True
-
-
-def ensure_monitor_mode(interface: str, enable: bool = True) -> bool:
-    if check_monitor_mode(interface):
-        return True
-    if not enable:
-        return False
-    if not enable_monitor_mode(interface):
-        return False
-    return check_monitor_mode(interface)
 
 
 def capture_test(

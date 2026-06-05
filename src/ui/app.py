@@ -11,7 +11,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.screenmanager import ScreenManager
 
 from ..config import Config, load_config
-from ..capture.wifi_sniffer import ensure_monitor_mode
+from ..capture.wifi_sniffer import check_monitor_mode
 from ..storage.db import get_setting, init_db, set_setting
 from ..utils.logging import setup_logging
 from ..battery_factory import build_battery_monitor
@@ -206,33 +206,31 @@ class PWDBoxApp(App):
         self.interface_choice = interface
         self.app_config.capture.interface = interface
 
-        if self.app_config.capture.enable_monitor:
-            monitor_ready = ensure_monitor_mode(interface, enable=True)
-            if not monitor_ready:
-                message = (
-                    f"Could not enable monitor mode on {interface}. "
-                    "Use sudo or grant CAP_NET_ADMIN/CAP_NET_RAW."
-                )
-                self.state.status = {
-                    "adapter_ok": False,
-                    "monitor_mode": False,
-                    "logging_on": False,
-                    "evidence_active": False,
-                    "running": False,
-                    "interface": interface,
-                    "message": message,
-                }
-                self.state.last_error = message
-                self.state.evidence_error = None
-                self.state.evidence_notice = None
-                self.state.evidence_active = False
-                self.state.last_saved_pcap_path = None
-                if self.header_bar:
-                    self.header_bar.set_message(message, tone="error")
-                if self.networks:
-                    self.networks.update_status(self.state.status, False, message)
-                self._update_dashboard()
-                return
+        if not check_monitor_mode(interface):
+            message = (
+                f"{interface} is not in monitor mode. "
+                "Set it manually before starting."
+            )
+            self.state.status = {
+                "adapter_ok": False,
+                "monitor_mode": False,
+                "logging_on": False,
+                "evidence_active": False,
+                "running": False,
+                "interface": interface,
+                "message": message,
+            }
+            self.state.last_error = message
+            self.state.evidence_error = None
+            self.state.evidence_notice = None
+            self.state.evidence_active = False
+            self.state.last_saved_pcap_path = None
+            if self.header_bar:
+                self.header_bar.set_message(message, tone="error")
+            if self.networks:
+                self.networks.update_status(self.state.status, False, message)
+            self._update_dashboard()
+            return
 
         self.state.status = {
             "adapter_ok": False,
