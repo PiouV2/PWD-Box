@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="PWD-Box is a Raspberry Pi-based tool for passive Wi-Fi monitoring and real-time deauthentication attack detection." />
+    <title>PWD-Box | Portable Wireless Defence Box</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ui5/webcomponents@2/dist/Button.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ui5/webcomponents@2/dist/Card.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ui5/webcomponents@2/dist/CardHeader.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ui5/webcomponents@2/dist/Bar.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ui5/webcomponents@2/dist/Icon.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ui5/webcomponents-icons@2/dist/shield.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ui5/webcomponents-icons@2/dist/bell.js"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ui5/webcomponents-icons@2/dist/laptop.js"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <ui5-bar class="nav-bar" design="Header">
+        <div class="brand" slot="startContent">PWD-Box</div>
+        <nav class="nav-links" slot="endContent" aria-label="Primary">
+          <a class="nav-link active" href="#home" data-target="home">Home</a>
+          <a class="nav-link" href="#features" data-target="features">Features</a>
+          <a class="nav-link" href="#documentation" data-target="documentation">Documentation</a>
+          <a class="nav-link" href="https://github.com/PiouV2/PWD-Box" target="_blank" rel="noreferrer">Repository</a>
+        </nav>
+      </ui5-bar>
+    </header>
+
+    <main>
+      <section id="home" class="section hero-section">
+        <div class="hero-content">
+          <p class="eyebrow">Portable Wireless Defence</p>
+          <h1>PWD-Box: Portable Wireless Defence Box</h1>
+          <p class="subheading">
+            A Raspberry Pi-based tool for passive Wi-Fi monitoring and real-time deauthentication attack detection.
+          </p>
+          <div class="hero-actions">
+            <a href="https://github.com/PiouV2/PWD-Box" target="_blank" rel="noreferrer" aria-label="View repository on GitHub">
+              <ui5-button design="Emphasized">View Repository</ui5-button>
+            </a>
+          </div>
+        </div>
+
+        <div class="terminal" role="region" aria-label="Monitoring command output preview">
+          <div class="terminal-top">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <p class="terminal-title">monitoring-session.sh</p>
+          </div>
+          <pre id="terminal-output" class="terminal-output"></pre>
+        </div>
+      </section>
+
+      <section id="features" class="section">
+        <div class="section-heading">
+          <h2>Features</h2>
+          <p>Focused on defensive monitoring with practical controls for portable deployment.</p>
+        </div>
+
+        <div class="feature-grid">
+          <ui5-card class="feature-card" accessible-name="Passive Monitoring feature">
+            <ui5-card-header slot="header" title-text="Passive Monitoring"></ui5-card-header>
+            <div class="card-content">
+              <ui5-icon name="shield" class="feature-icon" accessible-name="Shield icon"></ui5-icon>
+              <p>Monitors Wi-Fi activity without injecting traffic, preserving passive-only operation.</p>
+            </div>
+          </ui5-card>
+
+          <ui5-card class="feature-card" accessible-name="Real-Time Alerts feature">
+            <ui5-card-header slot="header" title-text="Real-Time Alerts"></ui5-card-header>
+            <div class="card-content">
+              <ui5-icon name="bell" class="feature-icon" accessible-name="Bell icon"></ui5-icon>
+              <p>Detects and reports deauthentication frames instantly to support rapid response.</p>
+            </div>
+          </ui5-card>
+
+          <ui5-card class="feature-card" accessible-name="Simple, Portable UI feature">
+            <ui5-card-header slot="header" title-text="Simple, Portable UI"></ui5-card-header>
+            <div class="card-content">
+              <ui5-icon name="laptop" class="feature-icon" accessible-name="Laptop icon"></ui5-icon>
+              <p>Built for Raspberry Pi and touchscreen workflows with clear operational views.</p>
+            </div>
+          </ui5-card>
+        </div>
+      </section>
+
+      <section id="documentation" class="section">
+        <div class="section-heading">
+          <h2>Documentation</h2>
+          <p>
+            Full project details are available in the
+            <a href="https://github.com/PiouV2/PWD-Box/blob/main/README.md" target="_blank" rel="noreferrer">README.md</a>.
+          </p>
+        </div>
+
+        <div class="docs-layout">
+          <div class="doc-steps">
+            <h3>Setup Steps</h3>
+            <ol>
+              <li>Clone the repository to your machine.</li>
+              <li>Move into the project directory.</li>
+              <li>Install dependencies in your preferred Python environment.</li>
+              <li>Launch the UI and verify the dashboard loads correctly.</li>
+            </ol>
+          </div>
+
+          <div class="terminal docs-terminal" role="region" aria-label="Setup commands">
+            <div class="terminal-top">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <p class="terminal-title">quick-start.sh</p>
+            </div>
+            <pre class="terminal-output terminal-static">
+$ git clone https://github.com/PiouV2/PWD-Box.git
+$ cd PWD-Box
+$ python -m src.main --ui
+            </pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="screenshots" class="section">
+        <div class="section-heading">
+          <h2>Screenshots</h2>
+          <p>Representative interface views for monitoring and operation.</p>
+        </div>
+
+        <div class="gallery-grid">
+          <figure class="shot-card">
+            <img src="assets/screenshots/dashboard.png" alt="System Dashboard screenshot placeholder" loading="lazy" />
+            <figcaption>System Dashboard</figcaption>
+          </figure>
+          <figure class="shot-card">
+            <img src="assets/screenshots/alerts.png" alt="Alerts Page screenshot placeholder" loading="lazy" />
+            <figcaption>Alerts Page</figcaption>
+          </figure>
+          <figure class="shot-card">
+            <img src="assets/screenshots/settings.png" alt="Settings Page screenshot placeholder" loading="lazy" />
+            <figcaption>Settings Page</figcaption>
+          </figure>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="footer-grid">
+        <div>
+          <h4>Repository</h4>
+          <p><a href="https://github.com/PiouV2/PWD-Box" target="_blank" rel="noreferrer">View on GitHub.</a></p>
+        </div>
+        <div>
+          <h4>Professional</h4>
+          <p><a href="https://www.linkedin.com/in/your-linkedin-url" target="_blank" rel="noreferrer">Connect on LinkedIn.</a></p>
+        </div>
+        <div>
+          <h4>Disclaimer</h4>
+          <p>For academic and defensive use only. Monitor authorized networks only.</p>
+        </div>
+      </div>
+    </footer>
+
+    <script src="script.js" defer></script>
+  </body>
+</html>

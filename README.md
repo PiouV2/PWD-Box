@@ -296,3 +296,10 @@ Keep each GIF under about 10 seconds and crop tightly around the UI so the motio
 ## Status
 
 PWD-Box is a prototype with working passive monitoring, local evidence capture, and an operator-facing UI. The design goal is a small, safe, local-first monitoring device rather than a general wireless attack toolkit.
+
+## License
+
+This project is licensed under the GNU General Public License v3.0.
+
+- Full license text: [LICENSE](LICENSE)
+- SPDX identifier: `GPL-3.0-or-later`
