@@ -71,8 +71,9 @@ function applyTheme(theme) {
 
   if (themeToggle) {
     const isDark = theme === "dark";
-    themeToggle.textContent = isDark ? "Light Mode" : "Dark Mode";
     themeToggle.icon = isDark ? "light-mode" : "dark-mode";
+    themeToggle.setAttribute("accessible-name", isDark ? "Switch to light mode" : "Switch to dark mode");
+    themeToggle.setAttribute("tooltip", isDark ? "Switch to light mode" : "Switch to dark mode");
   }
 }
 
