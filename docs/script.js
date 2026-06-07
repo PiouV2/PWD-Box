@@ -1,6 +1,7 @@
 const terminalOutput = document.getElementById("terminal-output");
 const sectionLinks = [...document.querySelectorAll(".nav-link[data-target]")];
 const themeToggle = document.getElementById("theme-toggle");
+const THEME_KEY = "pwd-box-theme";
 
 const terminalLines = [
   "$ sudo ./start-monitoring --interface wlan1",
@@ -69,12 +70,30 @@ function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", theme);
 
   if (themeToggle) {
-    themeToggle.textContent = theme === "dark" ? "Light Mode" : "Dark Mode";
+    const isDark = theme === "dark";
+    themeToggle.textContent = isDark ? "Light Mode" : "Dark Mode";
+    themeToggle.icon = isDark ? "light-mode" : "dark-mode";
+  }
+}
+
+function readStoredTheme() {
+  try {
+    return localStorage.getItem(THEME_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredTheme(theme) {
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    // Ignore storage failures (for example in strict privacy or file contexts)
   }
 }
 
 function initializeThemeToggle() {
-  const storedTheme = localStorage.getItem("pwd-box-theme");
+  const storedTheme = readStoredTheme();
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   const initialTheme = storedTheme || (prefersDark ? "dark" : "light");
 
@@ -84,12 +103,14 @@ function initializeThemeToggle() {
     return;
   }
 
-  themeToggle.addEventListener("click", () => {
+  const onToggleTheme = () => {
     const currentTheme = document.documentElement.getAttribute("data-theme") || "light";
     const nextTheme = currentTheme === "dark" ? "light" : "dark";
     applyTheme(nextTheme);
-    localStorage.setItem("pwd-box-theme", nextTheme);
-  });
+    writeStoredTheme(nextTheme);
+  };
+
+  themeToggle.addEventListener("click", onToggleTheme);
 }
 
 initializeThemeToggle();
