@@ -6,8 +6,27 @@
   --text: #111827;
   --muted: #4b5563;
   --border: #d1d5db;
+  --header-bg: rgba(255, 255, 255, 0.96);
+  --terminal-bg: #fbfcff;
+  --terminal-top-bg: linear-gradient(180deg, #ffffff, #f6f8fd);
+  --terminal-top-border: #dde1ef;
+  --terminal-text: #131c33;
   --shadow: 0 14px 30px rgba(26, 31, 54, 0.08);
   --radius: 12px;
+}
+
+html[data-theme="dark"] {
+  --bg: #111827;
+  --surface: #1f2937;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --border: #374151;
+  --header-bg: rgba(17, 24, 39, 0.95);
+  --terminal-bg: #0f172a;
+  --terminal-top-bg: linear-gradient(180deg, #1f2937, #111827);
+  --terminal-top-border: #334155;
+  --terminal-text: #e2e8f0;
+  --shadow: 0 14px 30px rgba(5, 8, 20, 0.45);
 }
 
 * {
@@ -34,7 +53,7 @@ body {
   top: 0;
   z-index: 100;
   border-bottom: 2px solid var(--brand);
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--header-bg);
   backdrop-filter: blur(7px);
 }
 
@@ -42,7 +61,7 @@ body {
   max-width: 1100px;
   margin: 0 auto;
   height: 72px;
-  padding: 0 1rem;
+  padding: 0 2rem;
 }
 
 .brand {
@@ -57,6 +76,10 @@ body {
   gap: 1rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.theme-toggle {
+  margin-left: 0.25rem;
 }
 
 .nav-link {
@@ -146,7 +169,7 @@ h1 {
 .terminal {
   border: 1px solid var(--brand);
   border-radius: var(--radius);
-  background: #fbfcff;
+  background: var(--terminal-bg);
   overflow: hidden;
   box-shadow: var(--shadow);
 }
@@ -156,8 +179,8 @@ h1 {
   align-items: center;
   gap: 0.5rem;
   padding: 0.7rem 0.9rem;
-  border-bottom: 1px solid #dde1ef;
-  background: linear-gradient(180deg, #ffffff, #f6f8fd);
+  border-bottom: 1px solid var(--terminal-top-border);
+  background: var(--terminal-top-bg);
 }
 
 .dot {
@@ -193,7 +216,7 @@ h1 {
   font-size: 0.92rem;
   font-family: "IBM Plex Mono", monospace;
   white-space: pre-wrap;
-  color: #131c33;
+  color: var(--terminal-text);
 }
 
 .terminal-static {
@@ -310,7 +333,7 @@ h1 {
 .site-footer {
   margin-top: 4rem;
   border-top: 1px solid #d7dbe8;
-  background: #ffffff;
+  background: var(--surface);
 }
 
 .footer-grid {
@@ -356,6 +379,6 @@ h1 {
 
   .nav-bar {
     height: auto;
-    padding: 0.8rem 1rem;
+    padding: 0.8rem 1.25rem;
   }
 }

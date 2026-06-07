@@ -1,5 +1,6 @@
 const terminalOutput = document.getElementById("terminal-output");
 const sectionLinks = [...document.querySelectorAll(".nav-link[data-target]")];
+const themeToggle = document.getElementById("theme-toggle");
 
 const terminalLines = [
   "$ sudo ./start-monitoring --interface wlan1",
@@ -64,5 +65,33 @@ function registerActiveNavObserver() {
   observedSections.forEach((section) => observer.observe(section));
 }
 
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+
+  if (themeToggle) {
+    themeToggle.textContent = theme === "dark" ? "Light Mode" : "Dark Mode";
+  }
+}
+
+function initializeThemeToggle() {
+  const storedTheme = localStorage.getItem("pwd-box-theme");
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  const initialTheme = storedTheme || (prefersDark ? "dark" : "light");
+
+  applyTheme(initialTheme);
+
+  if (!themeToggle) {
+    return;
+  }
+
+  themeToggle.addEventListener("click", () => {
+    const currentTheme = document.documentElement.getAttribute("data-theme") || "light";
+    const nextTheme = currentTheme === "dark" ? "light" : "dark";
+    applyTheme(nextTheme);
+    localStorage.setItem("pwd-box-theme", nextTheme);
+  });
+}
+
+initializeThemeToggle();
 typeTerminalPreview();
 registerActiveNavObserver();
