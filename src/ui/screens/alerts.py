@@ -100,10 +100,14 @@ class AlertRow(RecycleDataViewBehavior, BoxLayout):
         self.label_type.text = self.alert_type
         self.label_summary.text = self.summary
         self.label_pcap.text = self.pcap
+        for lbl in (self.label_ts, self.label_type, self.label_summary, self.label_pcap):
+            lbl.text_size = (lbl.width, None)
         return super().refresh_view_attrs(rv, index, data)
 
     def on_size(self, *args):
         """Constrain text to cell width when the row resizes."""
+        if not hasattr(self, 'label_ts'):
+            return
         for lbl in (self.label_ts, self.label_type, self.label_summary, self.label_pcap):
             lbl.text_size = (lbl.width, None)
 
