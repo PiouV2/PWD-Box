@@ -48,68 +48,60 @@ def _format_duration(start: Optional[str], end: Optional[str]) -> str:
 
 
 class AlertRow(RecycleDataViewBehavior, BoxLayout):
-    """Recycler row for a live alert."""
-
-    timestamp = StringProperty("")
-    alert_type = StringProperty("")
-    summary = StringProperty("")
-    pcap = StringProperty("")
+    """Recycler row for a live alert — horizontal label:value format."""
 
     theme_ref: Theme = None
 
     def __init__(self, **kwargs) -> None:
-        """Create the row and its labels."""
+        """Create a horizontal alert row with inline labels."""
         theme = self.__class__.theme_ref
         if theme is None:
             raise RuntimeError("Theme not set for AlertRow")
-        super().__init__(orientation="horizontal", size_hint_y=None, height=theme.dp(36), **kwargs)
+        super().__init__(orientation="vertical", size_hint_y=None, height=theme.dp(48), **kwargs)
         self.theme = theme
+        self.padding = [theme.gap_s, theme.gap_xs, theme.gap_s, theme.gap_xs]
         self.spacing = theme.gap_xs
-        self.padding = [theme.gap_xs, 0, theme.gap_xs, 0]
         self.alert_data: Dict[str, object] = {}
 
+        # Top line: timestamp + type
+        top = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.dp(18), spacing=theme.gap_s)
         self.label_ts = Label(
             color=theme.palette.text_dim, font_size=theme.caption,
-            size_hint_x=0.30, halign="left", valign="middle",
+            size_hint_x=None, width=theme.dp(110), halign="left", valign="middle",
         )
         self.label_type = Label(
             color=theme.palette.accent, font_size=theme.caption,
-            size_hint_x=0.18, halign="left", valign="middle",
+            size_hint_x=None, width=theme.dp(100), halign="left", valign="middle",
         )
-        self.label_summary = Label(
+        top.add_widget(self.label_ts)
+        top.add_widget(self.label_type)
+        top.add_widget(Label(size_hint_x=1))  # spacer
+        self.add_widget(top)
+
+        # Bottom line: BSSID + PCAP
+        bot = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.dp(18), spacing=theme.gap_s)
+        self.label_key = Label(
             color=theme.palette.text, font_size=theme.caption,
-            size_hint_x=0.42, halign="left", valign="middle",
+            halign="left", valign="middle",
         )
         self.label_pcap = Label(
             color=theme.palette.text_dim, font_size=theme.caption,
-            size_hint_x=0.10, halign="left", valign="middle",
+            size_hint_x=None, width=theme.dp(80), halign="right", valign="middle",
         )
-        self.add_widget(self.label_ts)
-        self.add_widget(self.label_type)
-        self.add_widget(self.label_summary)
-        self.add_widget(self.label_pcap)
+        bot.add_widget(self.label_key)
+        bot.add_widget(self.label_pcap)
+        self.add_widget(bot)
 
     def refresh_view_attrs(self, rv, index, data):
         """Bind row properties from recycler data."""
         self.alert_data = data.get("alert_data", {})
-        self.timestamp = data.get("timestamp", "")
-        self.alert_type = data.get("alert_type", "")
-        self.summary = data.get("summary", "")
-        self.pcap = data.get("pcap", "")
-        self.label_ts.text = self.timestamp
-        self.label_type.text = self.alert_type
-        self.label_summary.text = self.summary
-        self.label_pcap.text = self.pcap
-        for lbl in (self.label_ts, self.label_type, self.label_summary, self.label_pcap):
+        self.label_ts.text = data.get("timestamp", "")
+        self.label_type.text = data.get("alert_type", "")
+        self.label_key.text = data.get("summary", "")
+        self.label_pcap.text = data.get("pcap", "")
+        for lbl in (self.label_ts, self.label_type, self.label_key, self.label_pcap):
             lbl.text_size = (lbl.width, None)
         return super().refresh_view_attrs(rv, index, data)
-
-    def on_size(self, *args):
-        """Constrain text to cell width when the row resizes."""
-        if not hasattr(self, 'label_ts'):
-            return
-        for lbl in (self.label_ts, self.label_type, self.label_summary, self.label_pcap):
-            lbl.text_size = (lbl.width, None)
 
     def on_touch_down(self, touch):
         """Open a details popup when the row is tapped."""
@@ -235,20 +227,8 @@ class AlertsScreen(Screen):
         live_card.add_widget(Label(text="Live alerts", color=theme.palette.text, font_size=theme.h2, size_hint_y=None, height=theme.dp(24)))
         live_card.add_widget(Label(text="Tap an alert for details.", color=theme.palette.text_dim, font_size=theme.caption, size_hint_y=None, height=theme.dp(18)))
 
-        # Column header
-        header = BoxLayout(orientation="horizontal", size_hint_y=None, height=theme.dp(20), spacing=theme.gap_xs)
-        header.add_widget(Label(text="Time", color=theme.palette.text_dim, font_size=theme.caption,
-                                size_hint_x=0.30, halign="left", valign="middle"))
-        header.add_widget(Label(text="Type", color=theme.palette.text_dim, font_size=theme.caption,
-                                size_hint_x=0.18, halign="left", valign="middle"))
-        header.add_widget(Label(text="Key / BSSID", color=theme.palette.text_dim, font_size=theme.caption,
-                                size_hint_x=0.42, halign="left", valign="middle"))
-        header.add_widget(Label(text="PCAP", color=theme.palette.text_dim, font_size=theme.caption,
-                                size_hint_x=0.10, halign="left", valign="middle"))
-        live_card.add_widget(header)
-
         AlertRow.theme_ref = theme
-        self.live_view = _build_recycler(AlertRow, theme, row_height=theme.dp(36))
+        self.live_view = _build_recycler(AlertRow, theme, row_height=theme.dp(48))
         live_card.add_widget(self.live_view)
         root.add_widget(live_card)
 
