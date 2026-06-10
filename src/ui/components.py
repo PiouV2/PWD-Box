@@ -342,7 +342,7 @@ class HeaderBar(BoxLayout):
 class FooterNav(BoxLayout):
     """Bottom navigation bar for primary screens."""
 
-    def __init__(self, theme: Theme, screen_manager, **kwargs) -> None:
+    def __init__(self, theme: Theme, app, **kwargs) -> None:
         """Create navigation buttons bound to screen names."""
         super().__init__(orientation="horizontal", size_hint_y=None, height=theme.nav_height, **kwargs)
         self.theme = theme
@@ -354,7 +354,7 @@ class FooterNav(BoxLayout):
             self._rect = RoundedRectangle(pos=self.pos, size=self.size, radius=[0, 0, 0, 0])
         self.bind(pos=self._sync_rect, size=self._sync_rect)
 
-        self._screen_manager = screen_manager
+        self._app = app
         self._buttons = {}
         for name, label in (
             ("dashboard", "Dashboard"),
@@ -374,8 +374,8 @@ class FooterNav(BoxLayout):
         self._rect.size = self.size
 
     def _make_handler(self, name: str):
-        """Return a click handler that switches screens."""
+        """Return a click handler that switches screens via the app."""
         def _handler(_instance):
-            self._screen_manager.current = name
+            self._app.show_screen(name)
 
         return _handler

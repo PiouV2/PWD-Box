@@ -183,7 +183,7 @@ class PWDBoxApp(App):
 
         root.add_widget(self.screen_manager)
 
-        self.footer_nav = FooterNav(self.theme, self.screen_manager)
+        self.footer_nav = FooterNav(self.theme, self)
         root.add_widget(self.footer_nav)
         self.refresh_battery_status(0)
 

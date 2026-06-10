@@ -181,13 +181,13 @@ class HistoryAlertRow(RecycleDataViewBehavior, BoxLayout):
 def _build_recycler(viewclass, theme: Theme) -> RecycleView:
     """Build a simple vertical recycler view."""
     recycler = RecycleView()
-    recycler.viewclass = viewclass
     layout = RecycleBoxLayout(orientation="vertical", default_size=(None, theme.row_height))
     layout.default_size_hint = (1, None)
     layout.size_hint_y = None
     layout.bind(minimum_height=layout.setter("height"))
     recycler.add_widget(layout)
     recycler.layout_manager = layout
+    recycler.viewclass = viewclass
     return recycler
 
 
